@@ -36,6 +36,12 @@ export interface NoteInterface {
   NOTES: string
 }
 
+export interface StatusNoteInterface {
+  STATUS_NOTE_ID: number
+  MATTER_ID: number
+  NOTES: string
+}
+
 export type ModuleType =
   | "AS"
   | "FI"
@@ -48,6 +54,7 @@ export interface DatabaseInterface {
   Document: ModelStatic<Model<DocumentInterface>>
   Note: ModelStatic<Model<NoteInterface>>
   RelatedMatter: ModelStatic<Model<RelatedMatterInterface>>
+  StatusNote: ModelStatic<Model<StatusNoteInterface>>
   [key: string]: ModelStatic<Model<any, any>> | Sequelize | { matter: Sequelize, document: Sequelize, note: Sequelize, relatedMatter: Sequelize }
 }
 

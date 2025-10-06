@@ -11,6 +11,7 @@ import MatterModel from './Matter'
 import DocumentModel from './Document'
 import NoteModel from './Note'
 import RelatedMatterModel from './RelatedMatter'
+import StatusNoteModel from './StatusNote'
 
 const env = process.env.NODE_ENV || 'development'
 
@@ -24,6 +25,7 @@ const db = {
   Document: {} as ModelStatic<Model<Types.DocumentInterface>>,
   Note: {} as ModelStatic<Model<Types.NoteInterface>>,
   RelatedMatter: {} as ModelStatic<Model<Types.RelatedMatterInterface>>,
+  StatusNote: {} as ModelStatic<Model<Types.StatusNoteInterface>>
 } as Types.DatabaseInterface
 
 const dbPath: DBPathInterface = cfg[env].databases['city-law']
@@ -34,6 +36,7 @@ db.Matter = MatterModel(db.sequelize, DataTypes)
 db.Document = DocumentModel(db.sequelize, DataTypes)
 db.Note = NoteModel(db.sequelize, DataTypes)
 db.RelatedMatter = RelatedMatterModel(db.sequelize, DataTypes)
+db.StatusNote = StatusNoteModel(db.sequelize, DataTypes)
   
 Object.keys(db).forEach(modelName => {
   if((db[modelName] as Types.ModelWithAssociate).associate) {
@@ -45,3 +48,4 @@ export const Matter = db.Matter
 export const Document = db.Document
 export const Note = db.Note
 export const RelatedMatter = db.RelatedMatter
+export const StatusNote = db.StatusNote

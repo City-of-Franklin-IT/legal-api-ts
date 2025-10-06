@@ -12,10 +12,11 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     declare TITLE: string
     declare OPEN_DT: string
     
-    static associate({ Document, Note, RelatedMatter }: { Document: ModelStatic<Model<Types.DocumentInterface>>, Note: ModelStatic<Model<Types.NoteInterface>>, RelatedMatter: ModelStatic<Model<Types.RelatedMatterInterface>> }) {
+    static associate({ Document, Note, RelatedMatter, StatusNote }: { Document: ModelStatic<Model<Types.DocumentInterface>>, Note: ModelStatic<Model<Types.NoteInterface>>, RelatedMatter: ModelStatic<Model<Types.RelatedMatterInterface>>, StatusNote: ModelStatic<Model<Types.StatusNoteInterface>> }) {
       this.hasMany(Document, { sourceKey: 'MATTER_ID', foreignKey: 'MATTER_ID' })
       this.hasMany(Note, { sourceKey: 'MATTER_ID', foreignKey: 'MATTER_ID' })
       this.hasMany(RelatedMatter, { sourceKey: 'MATTER_ID', foreignKey: 'MATTER_ID' })
+      this.hasOne(StatusNote, { sourceKey: 'MATTER_ID', foreignKey: 'MATTER_ID' })
     }
   }
 
@@ -42,7 +43,10 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     },
     MODULE: {
       type: dataTypes.STRING,
-      allowNull: false
+      allowNull: false,
+      get() {
+        return this.getDataValue('MODULE').trimEnd()
+      }
     }
   },{
     sequelize,

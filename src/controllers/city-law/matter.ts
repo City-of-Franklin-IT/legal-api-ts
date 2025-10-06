@@ -1,7 +1,7 @@
 import { Op } from 'sequelize'
 import asyncHandler from '@/middleware/async'
 import { ErrorResponse } from '@/utils/errorResponse'
-import { Matter, Document, Note, RelatedMatter } from '@/models/city-law'
+import { Matter, Document, Note, RelatedMatter, StatusNote } from '@/models/city-law'
 
 // Types
 import { Request, Response, NextFunction } from 'express'
@@ -26,7 +26,8 @@ export const getMatters = asyncHandler(async (req: Request<{}, {}, {}, { module:
     include: [
       { model: Document },
       { model: Note },
-      { model: RelatedMatter }
+      { model: RelatedMatter },
+      { model: StatusNote }
     ]
   }) as (Model<Types.MatterInterface> & Types.MatterInterface)[]
 
@@ -48,7 +49,8 @@ export const getMatter = asyncHandler(async (req: Request<{ matterId: string }>,
     include: [
       { model: Document },
       { model: Note },
-      { model: RelatedMatter }
+      { model: RelatedMatter },
+      { model: StatusNote }
     ]
   }) as Model<Types.MatterInterface> & Types.MatterInterface
 
