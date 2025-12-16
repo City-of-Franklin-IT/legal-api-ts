@@ -4,9 +4,10 @@
   "description": "Express app handles CRUD actions for Legal related applications",
   "main": "app.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc-alias",
     "dev": "nodemon -r tsconfig-paths/register src/app.ts",
-    "start": "npx tsx dist/app.js --port 6006"
+    "deploy": "rsync -av --delete dist/ andrew@cofasv30:~/builds/legal-api-ts/dist/ && rsync -av package.json package-lock.json andrew@cofasv30:~/builds/legal-api-ts/ && ssh andrew@cofasv30 'pm2 restart legal-api-ts'",
+    "start": "npx tsx dist/app.js"
   },
   "author": "Andrew Southern",
   "license": "ISC",
@@ -33,6 +34,7 @@
     "@types/node": "^24.5.2",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.16",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.2"
   }
