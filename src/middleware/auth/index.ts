@@ -72,6 +72,7 @@ export const entra = asyncHandler(async (req: Request, _res: Response, next: Nex
     issuer: `https://login.microsoftonline.com/${ process.env.ENTRA_TENANT_ID }/v2.0`
   }, (err, decoded) => {
     if(err) {
+      req.log?.warn({ err: { name: err.name, message: err.message } }, 'jwt verify failed')
       return next(new ErrorResponse('Not authorized to access this route', 401))
     }
 
