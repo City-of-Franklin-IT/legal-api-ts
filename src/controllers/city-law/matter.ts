@@ -12,7 +12,7 @@ import * as Types from '@/models/city-law/types'
 //@desc    Get matters by query string
 //@route   GET /api/v1/legal/city-law/matter?module=&searchValue=
 //@access  Private 
-export const getMatters = asyncHandler(async (req: Request<{}, {}, {}, { module: Types.ModuleType, searchValue: string }>, res: Response<ControllerResponse & { data: Types.MatterInterface[] }>, next: NextFunction) => {
+export const getMatters = asyncHandler(async (req: Request<{}, {}, {}, { module: Types.ModuleType, searchValue: string }>, res: Response<ControllerResponse & { data: Types.MatterInterface[] }>) => {
   const matters = await Matter.findAll({
     where: {
       MODULE: {
@@ -52,10 +52,10 @@ export const getMatter = asyncHandler(async (req: Request<{ matterId: string }>,
       { model: RelatedMatter },
       { model: StatusNote }
     ]
-  }) as Model<Types.MatterInterface> & Types.MatterInterface
+  }) as Model<Types.MatterInterface> & Types.MatterInterface | null
 
   if(!matter) {
-    return next(new ErrorResponse(`Unable to return matter by matterId ${ req.params.matterId }`, 500))
+    return next(new ErrorResponse(`Unable to return matter by matterId ${ req.params.matterId }`, 404))
   }
 
   res.status(200).json({

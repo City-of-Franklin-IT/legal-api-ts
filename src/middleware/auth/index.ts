@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken'
 
 // Types
 import { Request, Response, NextFunction } from 'express'
-import { UserInterface, EntraUserInterface } from "./types"
+import { EntraUserInterface } from "./types"
 
 const jwks = jwksClient({
   jwksUri: `https://login.microsoftonline.com/${ process.env.ENTRA_TENANT_ID }/discovery/v2.0/keys`,
@@ -16,19 +16,15 @@ const jwks = jwksClient({
 
 const getKey = (header: any, callback: any) => {
   try {
-    console.log('[AUTH] getKey called, kid:', header?.kid)
     jwks.getSigningKey(header.kid, (err, key) => {
       if (err) {
-        console.error('[AUTH] getSigningKey error:', err.message)
         callback(err)
       } else {
-        console.log('[AUTH] Signing key found')
         const signingKey = key?.getPublicKey()
         callback(null, signingKey)
       }
     })
   } catch (err) {
-    console.error('[AUTH] getKey exception:', err)
     callback(err)
   }
 }
@@ -38,16 +34,29 @@ export const entra = asyncHandler(async (req: Request, _res: Response, next: Nex
 
   if(env === 'development') {
     const today = new Date()
+    const iat = Math.floor(today.getTime() / 1000)
+    const exp = iat + (30 * 24 * 60 * 60)
 
-    const user: UserInterface = {
-      role: 'Super User',
-      department: 'IT',
-      email: 'test.o365-3@franklintn.gov',
-      iat: Math.floor(today.getTime() / 1000),
-      exp: Math.floor(today.getTime() / 1000) + (30 * 24 * 60 * 60)
+    const entra: EntraUserInterface = {
+      aud: '',
+      exp,
+      iat,
+      iss: '',
+      name: '',
+      nbf: iat,
+      nonce: '',
+      oid: '',
+      preferred_username: 'test.o365-3@franklintn.gov',
+      rh: '',
+      roles: ['Super User'],
+      sid: '',
+      sub: '',
+      tid: '',
+      uti: '',
+      ver: ''
     }
 
-    req.user = user
+    req.entra = entra
 
     return next()
   }
@@ -63,7 +72,6 @@ export const entra = asyncHandler(async (req: Request, _res: Response, next: Nex
     issuer: `https://login.microsoftonline.com/${ process.env.ENTRA_TENANT_ID }/v2.0`
   }, (err, decoded) => {
     if(err) {
-      console.error('[AUTH] token verification error:', err.message)
       return next(new ErrorResponse('Not authorized to access this route', 401))
     }
 

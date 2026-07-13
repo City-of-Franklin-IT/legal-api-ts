@@ -19,10 +19,10 @@ export const getDocument = asyncHandler(async (req: Request<{ docId: string }>, 
     where: {
       DOC_ID: req.params.docId
     }
-  }) as Model<Types.DocumentInterface> & Types.DocumentInterface
+  }) as Model<Types.DocumentInterface> & Types.DocumentInterface | null
 
   if(!file) {
-    return next(new ErrorResponse(`Unable to return document by docId ${ req.params.docId }`, 500))
+    return next(new ErrorResponse(`Unable to return document by docId ${ req.params.docId }`, 404))
   }
 
   const absolutePath = path.join('/mnt/City_Law', file.FILE_PATH)
@@ -39,7 +39,6 @@ export const getDocument = asyncHandler(async (req: Request<{ docId: string }>, 
 
   res.sendFile(absolutePath, (err) => {
     if(err) {
-      console.error('Error sending file:', err);
       if(!res.headersSent) {
         return next(new ErrorResponse('Failed to send file', 500));
       }
@@ -57,7 +56,7 @@ export const getDocumentsZip = asyncHandler(async (req: Request<{ matterId: stri
     }
   }) as (Model<Types.DocumentInterface> & Types.DocumentInterface)[]
 
-  if(!documents || documents.length === 0) {
+  if(documents.length === 0) {
     return next(new ErrorResponse(`No documents found for matter ID ${ req.params.matterId }`, 404))
   }
 
@@ -66,7 +65,7 @@ export const getDocumentsZip = asyncHandler(async (req: Request<{ matterId: stri
   })
 
   archive.on('error', (err) => {
-    console.error('Archive error:', err)
+    req.log?.error({ err }, 'Archive error')
     if(!res.headersSent) {
       return next(new ErrorResponse('Failed to create zip archive', 500))
     }
@@ -88,7 +87,7 @@ export const getDocumentsZip = asyncHandler(async (req: Request<{ matterId: stri
       const filename = path.basename(document.FILE_PATH)
       archive.file(absolutePath, { name: filename })
     } else {
-      console.error(`File not found: ${ absolutePath }`)
+      req.log?.warn({ absolutePath }, 'File not found')
     }
   }
 
