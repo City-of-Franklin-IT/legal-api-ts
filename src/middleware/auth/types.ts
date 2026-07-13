@@ -1,3 +1,11 @@
+export interface UserInterface {
+  role: string
+  department: string
+  email: string
+  iat: number
+  exp: number
+}
+
 export interface EntraUserInterface {
   aud: string
   exp: number
@@ -20,6 +28,7 @@ export interface EntraUserInterface {
 declare global {
   namespace Express {
     interface Request {
+      user?: UserInterface
       entra?: EntraUserInterface
     }
   }
