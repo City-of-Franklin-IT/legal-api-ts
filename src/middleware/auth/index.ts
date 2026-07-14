@@ -16,6 +16,10 @@ const jwks = jwksClient({
 
 const getKey = (header: any, callback: any) => {
   try {
+    if(header?.alg !== 'RS256') {
+      return callback(new Error('Unsupported token algorithm'))
+    }
+
     jwks.getSigningKey(header.kid, (err, key) => {
       if (err) {
         callback(err)
@@ -48,7 +52,7 @@ export const entra = asyncHandler(async (req: Request, _res: Response, next: Nex
       oid: '',
       preferred_username: 'test.o365-3@franklintn.gov',
       rh: '',
-      roles: ['Super User'],
+      roles: ['task.sudo', 'task.admin', 'task.write'],
       sid: '',
       sub: '',
       tid: '',
@@ -69,7 +73,8 @@ export const entra = asyncHandler(async (req: Request, _res: Response, next: Nex
 
   jwt.verify(token, getKey, {
     audience: process.env.ENTRA_CLIENT_ID,
-    issuer: `https://login.microsoftonline.com/${ process.env.ENTRA_TENANT_ID }/v2.0`
+    issuer: `https://login.microsoftonline.com/${ process.env.ENTRA_TENANT_ID }/v2.0`,
+    algorithms: ['RS256']
   }, (err, decoded) => {
     if(err) {
       req.log?.warn({ err: { name: err.name, message: err.message } }, 'jwt verify failed')
