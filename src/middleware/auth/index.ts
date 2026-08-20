@@ -2,36 +2,11 @@ import asyncHandler from '../async'
 import { ErrorResponse } from '../../utils/errorResponse'
 import jwksClient from 'jwks-rsa'
 import jwt from 'jsonwebtoken'
+import logger from '@/utils/logger'
 
 // Types
 import { Request, Response, NextFunction } from 'express'
 import { EntraUserInterface } from "./types"
-
-const jwks = jwksClient({
-  jwksUri: `https://login.microsoftonline.com/${ process.env.ENTRA_TENANT_ID }/discovery/v2.0/keys`,
-  cache: true,
-  cacheMaxEntries: 10,
-  cacheMaxAge: 600000
-})
-
-const getKey = (header: any, callback: any) => {
-  try {
-    if(header?.alg !== 'RS256') {
-      return callback(new Error('Unsupported token algorithm'))
-    }
-
-    jwks.getSigningKey(header.kid, (err, key) => {
-      if (err) {
-        callback(err)
-      } else {
-        const signingKey = key?.getPublicKey()
-        callback(null, signingKey)
-      }
-    })
-  } catch (err) {
-    callback(err)
-  }
-}
 
 export const entra = asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
   const env = process.env.NODE_ENV
@@ -48,15 +23,12 @@ export const entra = asyncHandler(async (req: Request, _res: Response, next: Nex
       iss: '',
       name: '',
       nbf: iat,
-      nonce: '',
       oid: '',
       preferred_username: 'test.o365-3@franklintn.gov',
-      rh: '',
-      roles: ['task.sudo', 'task.admin', 'task.write'],
+      roles: ["task.sudo", "task.write", "task.admin"],
       sid: '',
       sub: '',
       tid: '',
-      uti: '',
       ver: ''
     }
 
@@ -77,7 +49,7 @@ export const entra = asyncHandler(async (req: Request, _res: Response, next: Nex
     algorithms: ['RS256']
   }, (err, decoded) => {
     if(err) {
-      req.log?.warn({ err: { name: err.name, message: err.message } }, 'jwt verify failed')
+      logger.error(`[AUTH] token verification error: ${ err.message }`)
       return next(new ErrorResponse('Not authorized to access this route', 401))
     }
 
@@ -86,3 +58,29 @@ export const entra = asyncHandler(async (req: Request, _res: Response, next: Nex
     return next()
   })
 })
+
+const jwks = jwksClient({
+  jwksUri: `https://login.microsoftonline.com/${ process.env.ENTRA_TENANT_ID }/discovery/v2.0/keys`,
+  cache: true,
+  cacheMaxEntries: 10,
+  cacheMaxAge: 600000
+})
+
+const getKey = (header: jwt.JwtHeader, callback: jwt.SigningKeyCallback) => {
+  try {
+    logger.debug(`[AUTH] getKey called, kid: ${header?.kid}`)
+    jwks.getSigningKey(header.kid, (err, key) => {
+      if (err) {
+        logger.error(`[AUTH] getSigningKey error: ${err.message}`)
+        callback(err)
+      } else {
+        logger.debug('[AUTH] Signing key found')
+        const signingKey = key?.getPublicKey()
+        callback(null, signingKey)
+      }
+    })
+  } catch (err) {
+    logger.error(`[AUTH] getKey exception: ${err}`)
+    callback(err instanceof Error ? err : new Error(String(err)))
+  }
+}

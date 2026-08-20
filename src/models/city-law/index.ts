@@ -1,6 +1,3 @@
-import dotenv from 'dotenv'
-dotenv.config({ path: 'config/config.env' })
-
 // Types
 import { DataTypes, Model, ModelStatic, Sequelize } from 'sequelize'
 import { ConfigInterface, DBPathInterface } from '../types'
