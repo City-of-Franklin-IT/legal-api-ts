@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import path from 'path'
 import { entra } from '@/middleware/auth'
+import rateLimiter from '@/middleware/rateLimiter'
 
 type AppRouteType = 'city-law'
 
@@ -17,6 +18,7 @@ const docsPath = process.env.NODE_ENV === 'development'
 const makeDocsRoute = (appRoute: AppRouteType) => {
   const router = Router()
   router.use(entra)
+  router.use(rateLimiter)
   router.get('/', (_req, res) => {
     res.sendFile(path.join(docsPath, docsMap.get(appRoute)!))
   })

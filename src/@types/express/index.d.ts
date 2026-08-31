@@ -1,5 +1,5 @@
 // Types
-import { UserInterface, EntraUserInterface } from '../../middleware/auth/types'
+import { EntraUserInterface } from '../../middleware/auth/types'
 import { FileInterface } from '@models/types'
 
 declare global {
