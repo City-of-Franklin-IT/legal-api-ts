@@ -1,12 +1,12 @@
 // Types
 import { EntraUserInterface } from '../../middleware/auth/types'
-import { FileInterface } from '@models/types'
+import { RequesterInterface } from '../../models/driver-school/types'
 
 declare global {
   namespace Express {
     interface Request {
       entra?: EntraUserInterface
-      file?: FileInterface
+      requester?: RequesterInterface
     }
   }
 }

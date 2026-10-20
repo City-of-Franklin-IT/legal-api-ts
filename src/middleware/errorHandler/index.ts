@@ -12,6 +12,10 @@ export default (err: ErrorWithStatus | SequelizeErrorWithStatus, req: Request, r
     const validationError = err as unknown as ValidationError
     error.message = validationError.errors[0].message
     error = new ErrorResponse(error.message, 500)
+  } else if(err.name === 'SequelizeUniqueConstraintError') {
+    error = new ErrorResponse('A record with these values already exists', 409)
+  } else if(err.name === 'MulterError') {
+    error = new ErrorResponse(err.message, (err as { code?: string }).code === 'LIMIT_FILE_SIZE' ? 413 : 400)
   } else {
     error = new ErrorResponse(err.message, err.statusCode || 500)
   }

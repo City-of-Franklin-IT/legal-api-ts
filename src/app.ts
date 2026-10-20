@@ -34,9 +34,11 @@ app.use(cors({ origin: ['https://dev.franklintn.gov', 'https://apps.franklintn.g
 
 // Route files
 import cityLawRoutes from '@/routes/city-law'
+import driverSchoolRoutes from '@/routes/driver-school'
 
 // Mount routes
 cityLawRoutes(app)
+driverSchoolRoutes(app)
 
 app.use(errorHandler)
 
