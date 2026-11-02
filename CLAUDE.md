@@ -21,7 +21,7 @@ This is a modular Express.js REST API for managing legal documents and case matt
 
 - **Domain-driven organization**: Code is organized by domain (e.g., `city-law`) under models/, controllers/, and routes/
 - **Path aliases**: Use `@/` prefix for imports (configured in tsconfig.json, resolved by tsc-alias in build)
-- **Base URL**: `/api/v1/legal` with sub-routes for each domain
+- **Base URL**: `/api/v2/legal` with sub-routes for each domain
 
 ### Key Patterns
 

@@ -46,7 +46,7 @@ cp src/config/config.env.example src/config/config.env
 | `DB_PASSWORD` | Database password |
 | `CITY_LAW_DB_HOST` | SQL Server hostname |
 | `CITY_LAW_DB_DATABASE` | Database name |
-| `BASE_URL` | API base path (e.g., `/api/v1/legal`) |
+| `BASE_URL` | API base path (e.g., `/api/v2/legal`) |
 | `ENTRA_URL` | Azure Entra ID validation endpoint |
 
 Example `.env`:
@@ -58,7 +58,7 @@ DB_USERNAME=api
 DB_PASSWORD=your_password
 CITY_LAW_DB_HOST=localhost
 CITY_LAW_DB_DATABASE=CityLaw
-BASE_URL=/api/v1/legal
+BASE_URL=/api/v2/legal
 ENTRA_URL=http://localhost/api/v1/entra/validate
 ```
 
@@ -87,7 +87,7 @@ src/
 
 ## API Routes
 
-Base URL: `/api/v1/legal/city-law`
+Base URL: `/api/v2/legal/city-law`
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
