@@ -12,7 +12,7 @@ import { Model } from 'sequelize'
 import * as Types from '@/models/city-law/types'
 
 //@desc    Get document
-//@route   GET /api/v1/legal/city-law/document/:docId
+//@route   GET /api/v2/legal/city-law/document/:docId
 //@access  Private
 export const getDocument = asyncHandler(async (req: Request<{ docId: string }>, res: Response, next: NextFunction) => {
   const file = await Document.findOne({
@@ -47,7 +47,7 @@ export const getDocument = asyncHandler(async (req: Request<{ docId: string }>, 
 })
 
 //@desc    Get documents as zip
-//@route   GET /api/v1/legal/city-law/document/zip/:matterId
+//@route   GET /api/v2/legal/city-law/document/zip/:matterId
 //@access  Private
 export const getDocumentsZip = asyncHandler(async (req: Request<{ matterId: string }>, res: Response, next: NextFunction) => {
   const documents = await Document.findAll({

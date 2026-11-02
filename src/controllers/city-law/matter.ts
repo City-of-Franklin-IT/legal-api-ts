@@ -10,7 +10,7 @@ import { ControllerResponse } from '@/controllers/types'
 import * as Types from '@/models/city-law/types'
 
 //@desc    Get matters by query string
-//@route   GET /api/v1/legal/city-law/matter?module=&searchValue=
+//@route   GET /api/v2/legal/city-law/matter?module=&searchValue=
 //@access  Private 
 export const getMatters = asyncHandler(async (req: Request<{}, {}, {}, { module: Types.ModuleType, searchValue: string }>, res: Response<ControllerResponse & { data: Types.MatterInterface[] }>) => {
   const matters = await Matter.findAll({
@@ -38,7 +38,7 @@ export const getMatters = asyncHandler(async (req: Request<{}, {}, {}, { module:
 })
 
 //@desc    Get matter by MATTER_ID
-//@route   GET /api/v1/legal/city-law/matter/:matterId
+//@route   GET /api/v2/legal/city-law/matter/:matterId
 //@access  Private
 export const getMatter = asyncHandler(async (req: Request<{ matterId: string }>, res: Response<ControllerResponse & { data: Types.MatterInterface }>, next: NextFunction) => {
   const matter = await Matter.findOne({
