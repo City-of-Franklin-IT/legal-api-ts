@@ -22,7 +22,7 @@ const visibleToRequester = (parentId: string) => ({
 })
 
 //@desc    Initial public submission; returns a token so the requester can keep submitting
-//@route   POST /api/v1/legal/driver-school/public/requester
+//@route   POST /api/v2/legal/driver-school/public/requester
 //@access  Public (rate limited)
 export const submitRequester = asyncHandler(async (req: Request<{}, {}, Types.RequesterCreateInterface>, res: Response<ControllerResponse & { data: { requester: Types.RequesterInterface, token: string } }>) => {
   const { citationNumber, firstName, lastName, email, licenseNumber, licenseState } = req.body ?? {}
@@ -39,7 +39,7 @@ export const submitRequester = asyncHandler(async (req: Request<{}, {}, Types.Re
 })
 
 //@desc    Get the requester the token belongs to
-//@route   GET /api/v1/legal/driver-school/public/me
+//@route   GET /api/v2/legal/driver-school/public/me
 //@access  Requester token
 export const getMe = asyncHandler(async (req: Request, res: Response<ControllerResponse & { data: Types.RequesterInterface }>) => {
   res.status(200).json({
@@ -49,7 +49,7 @@ export const getMe = asyncHandler(async (req: Request, res: Response<ControllerR
 })
 
 //@desc    Get the requester's correspondence
-//@route   GET /api/v1/legal/driver-school/public/correspondence
+//@route   GET /api/v2/legal/driver-school/public/correspondence
 //@access  Requester token
 export const getCorrespondences = asyncHandler(async (req: Request, res: Response<ControllerResponse & { data: Types.CorrespondenceInterface[] }>) => {
   const correspondences = await Correspondence.findAll({
@@ -64,7 +64,7 @@ export const getCorrespondences = asyncHandler(async (req: Request, res: Respons
 })
 
 //@desc    Add correspondence to the requester's request
-//@route   POST /api/v1/legal/driver-school/public/correspondence
+//@route   POST /api/v2/legal/driver-school/public/correspondence
 //@access  Requester token
 export const createCorrespondence = asyncHandler(async (req: Request<{}, {}, { message: string }>, res: Response<ControllerResponse & { data: Types.CorrespondenceInterface }>) => {
   const correspondence = await Correspondence.create({
@@ -80,7 +80,7 @@ export const createCorrespondence = asyncHandler(async (req: Request<{}, {}, { m
 })
 
 //@desc    Get the requester's non-internal attachments (without file contents)
-//@route   GET /api/v1/legal/driver-school/public/attachment
+//@route   GET /api/v2/legal/driver-school/public/attachment
 //@access  Requester token
 export const getAttachments = asyncHandler(async (req: Request, res: Response<ControllerResponse & { data: Types.AttachmentInterface[] }>) => {
   const attachments = await Attachment.findAll({
@@ -95,7 +95,7 @@ export const getAttachments = asyncHandler(async (req: Request, res: Response<Co
 })
 
 //@desc    Download one of the requester's non-internal attachments
-//@route   GET /api/v1/legal/driver-school/public/attachment/:uuid/download
+//@route   GET /api/v2/legal/driver-school/public/attachment/:uuid/download
 //@access  Requester token
 export const downloadAttachment = asyncHandler(async (req: Request<{ uuid: string }>, res: Response, next: NextFunction) => {
   const attachment = await Attachment.unscoped().findOne({
@@ -110,7 +110,7 @@ export const downloadAttachment = asyncHandler(async (req: Request<{ uuid: strin
 })
 
 //@desc    Upload an attachment to the requester's request (multipart: file field "attachment", plus caption)
-//@route   POST /api/v1/legal/driver-school/public/attachment
+//@route   POST /api/v2/legal/driver-school/public/attachment
 //@access  Requester token
 export const createAttachment = asyncHandler(async (req: Request<{}, {}, { caption?: string }>, res: Response<ControllerResponse & { data: Types.AttachmentInterface }>) => {
   const file = req.file!

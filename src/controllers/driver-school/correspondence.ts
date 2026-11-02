@@ -12,7 +12,7 @@ import * as Types from '@/models/driver-school/types'
 type CorrespondenceRecord = Model<Types.CorrespondenceInterface> & Types.CorrespondenceInterface
 
 //@desc    Get correspondence by requester uuid
-//@route   GET /api/v1/legal/driver-school/correspondence?parentId=
+//@route   GET /api/v2/legal/driver-school/correspondence?parentId=
 //@access  Private
 export const getCorrespondences = asyncHandler(async (req: Request<{}, {}, {}, { parentId?: string }>, res: Response<ControllerResponse & { data: Types.CorrespondenceInterface[] }>, next: NextFunction) => {
   if(!isUuid(req.query.parentId)) {
@@ -31,7 +31,7 @@ export const getCorrespondences = asyncHandler(async (req: Request<{}, {}, {}, {
 })
 
 //@desc    Get correspondence by uuid
-//@route   GET /api/v1/legal/driver-school/correspondence/:uuid
+//@route   GET /api/v2/legal/driver-school/correspondence/:uuid
 //@access  Private
 export const getCorrespondence = asyncHandler(async (req: Request<{ uuid: string }>, res: Response<ControllerResponse & { data: Types.CorrespondenceInterface }>, next: NextFunction) => {
   const correspondence = await Correspondence.findOne({ where: { uuid: req.params.uuid } }) as CorrespondenceRecord | null
@@ -47,7 +47,7 @@ export const getCorrespondence = asyncHandler(async (req: Request<{ uuid: string
 })
 
 //@desc    Create correspondence
-//@route   POST /api/v1/legal/driver-school/correspondence
+//@route   POST /api/v2/legal/driver-school/correspondence
 //@access  Private
 export const createCorrespondence = asyncHandler(async (req: Request<{}, {}, { parentId: string, message: string }>, res: Response<ControllerResponse & { data: Types.CorrespondenceInterface }>, next: NextFunction) => {
   if(!isUuid(req.body.parentId) || !await Requester.findOne({ where: { uuid: req.body.parentId } })) {
@@ -67,7 +67,7 @@ export const createCorrespondence = asyncHandler(async (req: Request<{}, {}, { p
 })
 
 //@desc    Update correspondence message (no audit columns exist for updates)
-//@route   PUT /api/v1/legal/driver-school/correspondence/:uuid
+//@route   PUT /api/v2/legal/driver-school/correspondence/:uuid
 //@access  Private
 export const updateCorrespondence = asyncHandler(async (req: Request<{ uuid: string }, {}, { message: string }>, res: Response<ControllerResponse & { data: Types.CorrespondenceInterface }>, next: NextFunction) => {
   const correspondence = await Correspondence.findOne({ where: { uuid: req.params.uuid } }) as CorrespondenceRecord | null
@@ -85,7 +85,7 @@ export const updateCorrespondence = asyncHandler(async (req: Request<{ uuid: str
 })
 
 //@desc    Delete correspondence
-//@route   DELETE /api/v1/legal/driver-school/correspondence/:uuid
+//@route   DELETE /api/v2/legal/driver-school/correspondence/:uuid
 //@access  Private
 export const deleteCorrespondence = asyncHandler(async (req: Request<{ uuid: string }>, res: Response<ControllerResponse>, next: NextFunction) => {
   const correspondence = await Correspondence.findOne({ where: { uuid: req.params.uuid } }) as CorrespondenceRecord | null

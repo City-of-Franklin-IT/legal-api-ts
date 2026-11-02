@@ -67,7 +67,7 @@ export const getRequester = asyncHandler(async (req: Request<{ uuid: string }>, 
 })
 
 //@desc    Create requester
-//@route   POST /api/v1/legal/driver-school/requester
+//@route   POST /api/v2/legal/driver-school/requester
 //@access  Private
 export const createRequester = asyncHandler(async (req: Request<{}, {}, Types.RequesterCreateInterface>, res: Response<ControllerResponse & { data: Types.RequesterInterface }>) => {
   const requester = await Requester.create(pickRequesterFields(req.body) as Types.RequesterInterface) as RequesterRecord
@@ -79,7 +79,7 @@ export const createRequester = asyncHandler(async (req: Request<{}, {}, Types.Re
 })
 
 //@desc    Update requester
-//@route   PUT /api/v1/legal/driver-school/requester/:uuid
+//@route   PUT /api/v2/legal/driver-school/requester/:uuid
 //@access  Private
 export const updateRequester = asyncHandler(async (req: Request<{ uuid: string }, {}, Partial<Types.RequesterCreateInterface>>, res: Response<ControllerResponse & { data: Types.RequesterInterface }>, next: NextFunction) => {
   const requester = await Requester.findOne({ where: { uuid: req.params.uuid } }) as RequesterRecord | null
@@ -102,7 +102,7 @@ export const updateRequester = asyncHandler(async (req: Request<{ uuid: string }
 })
 
 //@desc    Delete requester and everything attached to it
-//@route   DELETE /api/v1/legal/driver-school/requester/:uuid
+//@route   DELETE /api/v2/legal/driver-school/requester/:uuid
 //@access  Private
 export const deleteRequester = asyncHandler(async (req: Request<{ uuid: string }>, res: Response<ControllerResponse>, next: NextFunction) => {
   const requester = await Requester.findOne({ where: { uuid: req.params.uuid } }) as RequesterRecord | null
@@ -127,7 +127,7 @@ export const deleteRequester = asyncHandler(async (req: Request<{ uuid: string }
 })
 
 //@desc    Create a token (and link) letting the requester submit back to their request
-//@route   POST /api/v1/legal/driver-school/requester/:uuid/token
+//@route   POST /api/v2/legal/driver-school/requester/:uuid/token
 //@access  Private
 export const createRequesterToken = asyncHandler(async (req: Request<{ uuid: string }>, res: Response<ControllerResponse & { data: { token: string, url: string } }>, next: NextFunction) => {
   const requester = await Requester.findOne({ where: { uuid: req.params.uuid } }) as RequesterRecord | null

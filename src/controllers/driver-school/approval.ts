@@ -13,7 +13,7 @@ import * as Types from '@/models/driver-school/types'
 type ApprovalRecord = Model<Types.ApprovalInterface> & Types.ApprovalInterface
 
 //@desc    Get approvals by requester uuid
-//@route   GET /api/v1/legal/driver-school/approval?parentId=
+//@route   GET /api/v2/legal/driver-school/approval?parentId=
 //@access  Private
 export const getApprovals = asyncHandler(async (req: Request<{}, {}, {}, { parentId?: string }>, res: Response<ControllerResponse & { data: Types.ApprovalInterface[] }>, next: NextFunction) => {
   if(!isUuid(req.query.parentId)) {
@@ -32,7 +32,7 @@ export const getApprovals = asyncHandler(async (req: Request<{}, {}, {}, { paren
 })
 
 //@desc    Get approval by uuid
-//@route   GET /api/v1/legal/driver-school/approval/:uuid
+//@route   GET /api/v2/legal/driver-school/approval/:uuid
 //@access  Private
 export const getApproval = asyncHandler(async (req: Request<{ uuid: string }>, res: Response<ControllerResponse & { data: Types.ApprovalInterface }>, next: NextFunction) => {
   const approval = await Approval.findOne({ where: { uuid: req.params.uuid } }) as ApprovalRecord | null
@@ -48,7 +48,7 @@ export const getApproval = asyncHandler(async (req: Request<{ uuid: string }>, r
 })
 
 //@desc    Create approval
-//@route   POST /api/v1/legal/driver-school/approval
+//@route   POST /api/v2/legal/driver-school/approval
 //@access  Private
 export const createApproval = asyncHandler(async (req: Request<{}, {}, Pick<Types.ApprovalInterface, 'parentId' | 'approval' | 'comment'>>, res: Response<ControllerResponse & { data: Types.ApprovalInterface }>, next: NextFunction) => {
   if(!isUuid(req.body.parentId) || !await Requester.findOne({ where: { uuid: req.body.parentId } })) {
@@ -69,7 +69,7 @@ export const createApproval = asyncHandler(async (req: Request<{}, {}, Pick<Type
 })
 
 //@desc    Update approval
-//@route   PUT /api/v1/legal/driver-school/approval/:uuid
+//@route   PUT /api/v2/legal/driver-school/approval/:uuid
 //@access  Private
 export const updateApproval = asyncHandler(async (req: Request<{ uuid: string }, {}, Pick<Types.ApprovalInterface, 'approval' | 'comment'>>, res: Response<ControllerResponse & { data: Types.ApprovalInterface }>, next: NextFunction) => {
   const approval = await Approval.findOne({ where: { uuid: req.params.uuid } }) as ApprovalRecord | null
@@ -92,7 +92,7 @@ export const updateApproval = asyncHandler(async (req: Request<{ uuid: string },
 })
 
 //@desc    Delete approval
-//@route   DELETE /api/v1/legal/driver-school/approval/:uuid
+//@route   DELETE /api/v2/legal/driver-school/approval/:uuid
 //@access  Private
 export const deleteApproval = asyncHandler(async (req: Request<{ uuid: string }>, res: Response<ControllerResponse>, next: NextFunction) => {
   const approval = await Approval.findOne({ where: { uuid: req.params.uuid } }) as ApprovalRecord | null
