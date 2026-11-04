@@ -1,8 +1,12 @@
 services:
-  hr-api-ts:
+  legal-api-ts:
     image: ghcr.io/city-of-franklin-it/legal-api-ts:1.0.0
     restart: unless-stopped
     env_file:
       - .env
     ports:
       - "127.0.0.1:6006:6006"
+    volumes:
+      - /mnt/City_Law:/mnt/City_Law
+    user: "1001:1001"
+
