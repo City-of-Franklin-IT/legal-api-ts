@@ -8,5 +8,6 @@ services:
       - "127.0.0.1:6006:6006"
     volumes:
       - /mnt/City_Law:/mnt/City_Law
+      - /opt/docs:/opt/docs
     user: "1001:1001"
 
