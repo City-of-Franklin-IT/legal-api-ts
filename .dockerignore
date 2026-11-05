@@ -1,0 +1,32 @@
+# Dependencies (installed fresh in the image)
+node_modules
+
+# Build output (rebuilt in the build stage)
+dist
+
+# Environment files and secrets (supplied at runtime)
+.env
+.env.*
+!.env.example
+!.env.development.example
+src/config/config.env
+
+# Version control
+.git
+.gitignore
+
+# Docker / deployment
+Dockerfile
+.dockerignore
+deploy
+
+# Editor and tooling
+.vscode
+.claude
+CLAUDE.md
+README.md
+
+# Logs and OS files
+*.log
+npm-debug.log*
+.DS_Store
