@@ -18,6 +18,5 @@ services:
     volumes:
       - /mnt/City_Law:/mnt/City_Law
       - /opt/docs:/opt/docs
-      - /opt/builds/logs:/logs
     user: "1001:1001"
-    command: ["sh", "-c", "exec node dist/app.js >> /logs/legal-api-ts-out.log 2>> /logs/legal-api-ts-error.log"]
+    command: ["sh", "-c", "exec node dist/app.js"]
