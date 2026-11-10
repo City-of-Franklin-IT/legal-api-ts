@@ -2,12 +2,22 @@ services:
   legal-api-ts:
     image: ghcr.io/city-of-franklin-it/legal-api-ts:1.0.0
     restart: unless-stopped
-    env_file:
-      - .env
+    environment:
+      - BASE_URL=${BASE_URL}
+      - HOST=${HOST}
+      - PORT=${PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - CITY_LAW_DB_HOST=${CITY_LAW_DB_HOST}
+      - CITY_LAW_DB_DATABASE=${CITY_LAW_DB_DATABASE}
+      - ENTRA_TENANT_ID=${ENTRA_TENANT_ID}
+      - ENTRA_CLIENT_ID=${ENTRA_CLIENT_ID}
+      - LOG_LEVEL=${LOG_LEVEL}
     ports:
-      - "127.0.0.1:6006:6006"
+      - "127.0.0.1:${PORT}:${PORT}"
     volumes:
       - /mnt/City_Law:/mnt/City_Law
       - /opt/docs:/opt/docs
+      - /opt/logs:/logs
     user: "1001:1001"
-
+    command: ["sh", "-c", "exec node dist/app.js >> /logs/legal-api-ts-out.log 2>> /logs/legal-api-ts-error.log"]
