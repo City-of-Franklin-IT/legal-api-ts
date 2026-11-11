@@ -12,7 +12,6 @@ services:
       - CITY_LAW_DB_DATABASE=${CITY_LAW_DB_DATABASE}
       - ENTRA_TENANT_ID=${ENTRA_TENANT_ID}
       - ENTRA_CLIENT_ID=${ENTRA_CLIENT_ID}
-      - LOG_LEVEL=${LOG_LEVEL}
     ports:
       - "127.0.0.1:${PORT}:${PORT}"
     volumes:
