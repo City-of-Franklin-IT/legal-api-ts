@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { submitRequester, getMe, getCorrespondences, createCorrespondence, getAttachments, downloadAttachment, createAttachment } from '@/controllers/driver-school/public'
+import { submitRequester, getMe, getCorrespondences, createCorrespondence, getAttachments, downloadAttachment, createAttachment } from '@/controllers/traffic-citation/public'
 import { requesterToken } from "@/middleware/auth/requesterToken"
 import rateLimiter from "@/middleware/rateLimiter"
 import submissionLimiter from "@/middleware/rateLimiter/submission"

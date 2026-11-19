@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { getAttachments, getAttachment, downloadAttachment, createAttachment, updateAttachment, deleteAttachment } from '@/controllers/driver-school/attachment'
+import { getAttachments, getAttachment, downloadAttachment, createAttachment, updateAttachment, deleteAttachment } from '@/controllers/traffic-citation/attachment'
 import { entra } from "@/middleware/auth"
 import rateLimiter from "@/middleware/rateLimiter"
 import upload from "@/middleware/upload"

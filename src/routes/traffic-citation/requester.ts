@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { getRequesters, getRequester, createRequester, updateRequester, deleteRequester, createRequesterToken } from '@/controllers/driver-school/requester'
+import { getRequesters, getRequester, createRequester, updateRequester, deleteRequester, createRequesterToken } from '@/controllers/traffic-citation/requester'
 import { entra } from "@/middleware/auth"
 import rateLimiter from "@/middleware/rateLimiter"
 import uuidParam from './uuidParam'

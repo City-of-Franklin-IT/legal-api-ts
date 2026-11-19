@@ -8,7 +8,7 @@ import { Request, Response, NextFunction } from 'express'
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: Number(process.env.DRIVER_SCHOOL_MAX_UPLOAD_BYTES) || 10 * 1024 * 1024, files: 1 }
+  limits: { fileSize: Number(process.env.TRAFFIC_CITATION_MAX_UPLOAD_BYTES) || 10 * 1024 * 1024, files: 1 }
 }).single('attachment')
 
 // The client-supplied mime type is ignored; only the file's own bytes decide whether it is allowed

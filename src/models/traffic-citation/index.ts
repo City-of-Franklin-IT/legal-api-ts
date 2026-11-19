@@ -23,7 +23,7 @@ const db = {
   Attachment: {} as ModelStatic<Model<Types.AttachmentInterface>>
 } as Types.DatabaseInterface
 
-const dbPath: DBPathInterface = cfg[env].databases['driver-school']
+const dbPath: DBPathInterface = cfg[env].databases['traffic-citation']
 
 db.sequelize = new Sequelize(dbPath.database, dbPath.username, dbPath.password, dbPath)
 

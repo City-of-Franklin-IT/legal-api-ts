@@ -1,11 +1,11 @@
 import asyncHandler from '../async'
 import { ErrorResponse } from '../../utils/errorResponse'
 import { verifyRequesterToken } from '../../utils/requesterToken'
-import { Requester } from '../../models/driver-school'
+import { Requester } from '../../models/traffic-citation'
 
 // Types
 import { Request, Response, NextFunction } from 'express'
-import * as Types from '../../models/driver-school/types'
+import * as Types from '../../models/traffic-citation/types'
 
 //@desc    Authenticates a requester by the token emailed to them; sets req.requester
 export const requesterToken = asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {

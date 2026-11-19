@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { getApprovals, getApproval, createApproval, updateApproval, deleteApproval } from '@/controllers/driver-school/approval'
+import { getApprovals, getApproval, createApproval, updateApproval, deleteApproval } from '@/controllers/traffic-citation/approval'
 import { entra } from "@/middleware/auth"
 import rateLimiter from "@/middleware/rateLimiter"
 import uuidParam from './uuidParam'

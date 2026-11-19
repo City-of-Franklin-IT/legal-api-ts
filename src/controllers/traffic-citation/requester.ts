@@ -2,13 +2,13 @@ import { Op } from 'sequelize'
 import asyncHandler from '@/middleware/async'
 import { ErrorResponse } from '@/utils/errorResponse'
 import { signRequesterToken } from '@/utils/requesterToken'
-import { sequelize, Requester, Correspondence, Approval, Attachment } from '@/models/driver-school'
+import { sequelize, Requester, Correspondence, Approval, Attachment } from '@/models/traffic-citation'
 
 // Types
 import { Request, Response, NextFunction } from 'express'
 import { Model } from 'sequelize'
 import { ControllerResponse } from '@/controllers/types'
-import * as Types from '@/models/driver-school/types'
+import * as Types from '@/models/traffic-citation/types'
 
 type RequesterRecord = Model<Types.RequesterInterface> & Types.RequesterInterface
 
@@ -19,7 +19,7 @@ const pickRequesterFields = (body: Partial<Types.RequesterCreateInterface>): Par
 }
 
 //@desc    Get requesters by query string
-//@route   GET /api/v2/legal/driver-school/requester?searchValue=
+//@route   GET /api/v2/legal/traffic-citation/requester?searchValue=
 //@access  Private
 export const getRequesters = asyncHandler(async (req: Request<{}, {}, {}, { searchValue?: string }>, res: Response<ControllerResponse & { data: Types.RequesterInterface[] }>) => {
   const searchValue = `%${ req.query.searchValue ?? '' }%`
@@ -43,7 +43,7 @@ export const getRequesters = asyncHandler(async (req: Request<{}, {}, {}, { sear
 })
 
 //@desc    Get requester by uuid, with correspondence, approvals and attachments
-//@route   GET /api/v2/legal/driver-school/requester/:uuid
+//@route   GET /api/v2/legal/traffic-citation/requester/:uuid
 //@access  Private
 export const getRequester = asyncHandler(async (req: Request<{ uuid: string }>, res: Response<ControllerResponse & { data: Types.RequesterInterface }>, next: NextFunction) => {
   const requester = await Requester.findOne({
@@ -67,7 +67,7 @@ export const getRequester = asyncHandler(async (req: Request<{ uuid: string }>, 
 })
 
 //@desc    Create requester
-//@route   POST /api/v2/legal/driver-school/requester
+//@route   POST /api/v2/legal/traffic-citation/requester
 //@access  Private
 export const createRequester = asyncHandler(async (req: Request<{}, {}, Types.RequesterCreateInterface>, res: Response<ControllerResponse & { data: Types.RequesterInterface }>) => {
   const requester = await Requester.create(pickRequesterFields(req.body) as Types.RequesterInterface) as RequesterRecord
@@ -79,7 +79,7 @@ export const createRequester = asyncHandler(async (req: Request<{}, {}, Types.Re
 })
 
 //@desc    Update requester
-//@route   PUT /api/v2/legal/driver-school/requester/:uuid
+//@route   PUT /api/v2/legal/traffic-citation/requester/:uuid
 //@access  Private
 export const updateRequester = asyncHandler(async (req: Request<{ uuid: string }, {}, Partial<Types.RequesterCreateInterface>>, res: Response<ControllerResponse & { data: Types.RequesterInterface }>, next: NextFunction) => {
   const requester = await Requester.findOne({ where: { uuid: req.params.uuid } }) as RequesterRecord | null
@@ -102,7 +102,7 @@ export const updateRequester = asyncHandler(async (req: Request<{ uuid: string }
 })
 
 //@desc    Delete requester and everything attached to it
-//@route   DELETE /api/v2/legal/driver-school/requester/:uuid
+//@route   DELETE /api/v2/legal/traffic-citation/requester/:uuid
 //@access  Private
 export const deleteRequester = asyncHandler(async (req: Request<{ uuid: string }>, res: Response<ControllerResponse>, next: NextFunction) => {
   const requester = await Requester.findOne({ where: { uuid: req.params.uuid } }) as RequesterRecord | null
@@ -127,7 +127,7 @@ export const deleteRequester = asyncHandler(async (req: Request<{ uuid: string }
 })
 
 //@desc    Create a token (and link) letting the requester submit back to their request
-//@route   POST /api/v2/legal/driver-school/requester/:uuid/token
+//@route   POST /api/v2/legal/traffic-citation/requester/:uuid/token
 //@access  Private
 export const createRequesterToken = asyncHandler(async (req: Request<{ uuid: string }>, res: Response<ControllerResponse & { data: { token: string, url: string } }>, next: NextFunction) => {
   const requester = await Requester.findOne({ where: { uuid: req.params.uuid } }) as RequesterRecord | null
@@ -142,7 +142,7 @@ export const createRequesterToken = asyncHandler(async (req: Request<{ uuid: str
     success: true,
     data: {
       token,
-      url: `${ process.env.DRIVER_SCHOOL_PUBLIC_URL }?token=${ encodeURIComponent(token) }`
+      url: `${ process.env.TRAFFIC_CITATION_PUBLIC_URL }?token=${ encodeURIComponent(token) }`
     }
   })
 })

@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { getCorrespondences, getCorrespondence, createCorrespondence, updateCorrespondence, deleteCorrespondence } from '@/controllers/driver-school/correspondence'
+import { getCorrespondences, getCorrespondence, createCorrespondence, updateCorrespondence, deleteCorrespondence } from '@/controllers/traffic-citation/correspondence'
 import { entra } from "@/middleware/auth"
 import rateLimiter from "@/middleware/rateLimiter"
 import uuidParam from './uuidParam'

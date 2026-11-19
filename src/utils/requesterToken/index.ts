@@ -1,10 +1,10 @@
 import jwt from 'jsonwebtoken'
 import { ErrorResponse } from '../errorResponse'
 
-const SCOPE = 'driver-school-requester'
+const SCOPE = 'traffic-citation-requester'
 
 const getSecret = () => {
-  const secret = process.env.DRIVER_SCHOOL_TOKEN_SECRET
+  const secret = process.env.TRAFFIC_CITATION_TOKEN_SECRET
 
   if(!secret) {
     throw new ErrorResponse('Requester token secret is not configured', 500)
@@ -18,7 +18,7 @@ export const signRequesterToken = (requesterUuid: string) => {
   return jwt.sign({ scope: SCOPE }, getSecret(), {
     subject: requesterUuid,
     algorithm: 'HS256',
-    expiresIn: (process.env.DRIVER_SCHOOL_TOKEN_TTL || '14d') as jwt.SignOptions['expiresIn']
+    expiresIn: (process.env.TRAFFIC_CITATION_TOKEN_TTL || '20m') as jwt.SignOptions['expiresIn']
   })
 }
 

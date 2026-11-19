@@ -3,13 +3,13 @@ import { ErrorResponse } from '@/utils/errorResponse'
 import editorTracking from '@/utils/editorTracking'
 import isUuid from '@/utils/isUuid'
 import detectFileType from '@/utils/detectFileType'
-import { Requester, Attachment } from '@/models/driver-school'
+import { Requester, Attachment } from '@/models/traffic-citation'
 
 // Types
 import { Request, Response, NextFunction } from 'express'
 import { Model } from 'sequelize'
 import { ControllerResponse } from '@/controllers/types'
-import * as Types from '@/models/driver-school/types'
+import * as Types from '@/models/traffic-citation/types'
 
 type AttachmentRecord = Model<Types.AttachmentInterface> & Types.AttachmentInterface
 
@@ -27,7 +27,7 @@ export const sendAttachment = (res: Response, attachment: AttachmentRecord) => {
 }
 
 //@desc    Get attachments (without file contents) by requester uuid
-//@route   GET /api/v2/legal/driver-school/attachment?parentId=
+//@route   GET /api/v2/legal/traffic-citation/attachment?parentId=
 //@access  Private
 export const getAttachments = asyncHandler(async (req: Request<{}, {}, {}, { parentId?: string }>, res: Response<ControllerResponse & { data: Types.AttachmentInterface[] }>, next: NextFunction) => {
   if(!isUuid(req.query.parentId)) {
@@ -46,7 +46,7 @@ export const getAttachments = asyncHandler(async (req: Request<{}, {}, {}, { par
 })
 
 //@desc    Get attachment metadata by uuid
-//@route   GET /api/v2/legal/driver-school/attachment/:uuid
+//@route   GET /api/v2/legal/traffic-citation/attachment/:uuid
 //@access  Private
 export const getAttachment = asyncHandler(async (req: Request<{ uuid: string }>, res: Response<ControllerResponse & { data: Types.AttachmentInterface }>, next: NextFunction) => {
   const attachment = await Attachment.findOne({ where: { uuid: req.params.uuid } }) as AttachmentRecord | null
@@ -62,7 +62,7 @@ export const getAttachment = asyncHandler(async (req: Request<{ uuid: string }>,
 })
 
 //@desc    Download attachment file
-//@route   GET /api/v2/legal/driver-school/attachment/:uuid/download
+//@route   GET /api/v2/legal/traffic-citation/attachment/:uuid/download
 //@access  Private
 export const downloadAttachment = asyncHandler(async (req: Request<{ uuid: string }>, res: Response, next: NextFunction) => {
   const attachment = await Attachment.unscoped().findOne({ where: { uuid: req.params.uuid } }) as AttachmentRecord | null
@@ -75,7 +75,7 @@ export const downloadAttachment = asyncHandler(async (req: Request<{ uuid: strin
 })
 
 //@desc    Create attachment (multipart: file field "attachment", plus parentId, caption, isInternal)
-//@route   POST /api/v2/legal/driver-school/attachment
+//@route   POST /api/v2/legal/traffic-citation/attachment
 //@access  Private
 export const createAttachment = asyncHandler(async (req: Request<{}, {}, { parentId: string, caption?: string, isInternal?: string }>, res: Response<ControllerResponse & { data: Types.AttachmentInterface }>, next: NextFunction) => {
   if(!isUuid(req.body.parentId) || !await Requester.findOne({ where: { uuid: req.body.parentId } })) {
@@ -102,7 +102,7 @@ export const createAttachment = asyncHandler(async (req: Request<{}, {}, { paren
 })
 
 //@desc    Update attachment metadata (caption, isInternal)
-//@route   PUT /api/v2/legal/driver-school/attachment/:uuid
+//@route   PUT /api/v2/legal/traffic-citation/attachment/:uuid
 //@access  Private
 export const updateAttachment = asyncHandler(async (req: Request<{ uuid: string }, {}, { caption?: string, isInternal?: boolean }>, res: Response<ControllerResponse & { data: Types.AttachmentInterface }>, next: NextFunction) => {
   const attachment = await Attachment.findOne({ where: { uuid: req.params.uuid } }) as AttachmentRecord | null
@@ -125,7 +125,7 @@ export const updateAttachment = asyncHandler(async (req: Request<{ uuid: string 
 })
 
 //@desc    Delete attachment
-//@route   DELETE /api/v2/legal/driver-school/attachment/:uuid
+//@route   DELETE /api/v2/legal/traffic-citation/attachment/:uuid
 //@access  Private
 export const deleteAttachment = asyncHandler(async (req: Request<{ uuid: string }>, res: Response<ControllerResponse>, next: NextFunction) => {
   const attachment = await Attachment.findOne({ where: { uuid: req.params.uuid } }) as AttachmentRecord | null

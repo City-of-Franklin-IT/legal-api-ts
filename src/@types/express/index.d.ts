@@ -1,6 +1,6 @@
 // Types
 import { EntraUserInterface } from '../../middleware/auth/types'
-import { RequesterInterface } from '../../models/driver-school/types'
+import { RequesterInterface } from '../../models/traffic-citation/types'
 
 declare global {
   namespace Express {

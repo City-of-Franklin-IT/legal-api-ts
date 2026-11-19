@@ -41,9 +41,9 @@ Routes → Auth Middleware → Async Wrapper → Controller → Model → Respon
 
 **Authentication**: Azure Entra ID via middleware. Development mode bypasses auth with test user (see `@/middleware/auth/entra.ts`).
 
-### Driver School module
+### Traffic Citation module
 
-`driver-school` (separate DB, see `DRIVER_SCHOOL_*` env vars) has staff routes (Entra) plus `/public/*` routes. Public follow-up routes authenticate with a stateless requester token (`@/utils/requesterToken`, `@/middleware/auth/requesterToken`) minted by `POST /requester/:uuid/token`. Attachments are uploaded with multer (`@/middleware/upload`) and stored as VARBINARY; the `attachment` column is excluded by the model's default scope.
+`traffic-citation` (separate DB, see `TRAFFIC_CITATION_*` env vars) has staff routes (Entra) plus `/public/*` routes. Public follow-up routes authenticate with a stateless requester token (`@/utils/requesterToken`, `@/middleware/auth/requesterToken`) minted by `POST /requester/:uuid/token`. Attachments are uploaded with multer (`@/middleware/upload`) and stored as VARBINARY; the `attachment` column is excluded by the model's default scope.
 
 ### Models
 

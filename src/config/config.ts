@@ -13,11 +13,11 @@ export default {
         "timezone": "US/Chicago",
         "logging": false
       },
-      "driver-school": {
+      "traffic-citation": {
         "username": process.env.DB_USERNAME,
         "password": process.env.DB_PASSWORD,
-        "database": process.env.DRIVER_SCHOOL_DB_DATABASE,
-        "host": process.env.DRIVER_SCHOOL_DB_HOST,
+        "database": process.env.TRAFFIC_CITATION_DB_DATABASE,
+        "host": process.env.TRAFFIC_CITATION_DB_HOST,
         "dialect": "mssql",
         "dialectOptions": {
           useUTC: true
@@ -41,11 +41,11 @@ export default {
         "timezone": "US/Chicago",
         "logging": false
       },
-      "driver-school": {
+      "traffic-citation": {
         "username": process.env.DB_USERNAME,
         "password": process.env.DB_PASSWORD,
-        "database": process.env.DRIVER_SCHOOL_DB_DATABASE,
-        "host": process.env.DRIVER_SCHOOL_DB_HOST,
+        "database": process.env.TRAFFIC_CITATION_DB_DATABASE,
+        "host": process.env.TRAFFIC_CITATION_DB_HOST,
         "dialect": "mssql",
         "dialectOptions": {
           useUTC: true
