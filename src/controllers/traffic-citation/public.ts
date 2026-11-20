@@ -5,6 +5,7 @@ import { ErrorResponse } from '@/utils/errorResponse'
 import { signRequesterToken } from '@/utils/requesterToken'
 import isUuid from '@/utils/isUuid'
 import detectFileType from '@/utils/detectFileType'
+import cleanFileName from '@/utils/cleanFileName'
 import { sequelize, Requester, Offense, Approval, Correspondence, Attachment } from '@/models/traffic-citation'
 import { sendAttachment } from './attachment'
 
@@ -288,14 +289,6 @@ export const downloadAttachment = asyncHandler(async (req: Request<{ uuid: strin
   sendAttachment(res, attachment)
 })
 
-// Strip any path, control characters and quotes the browser sent; never trust it for anything but display
-const cleanFileName = (name: string) => {
-  const base = name.split(/[\\/]/).pop() ?? ''
-  const cleaned = base.replace(/[\u0000-\u001f\u007f"]/g, '').trim().slice(0, 255)
-
-  return cleaned || 'proof'
-}
-
 //@desc    Upload proof for one of the requester's offenses (multipart: file field "attachment", optional caption)
 //@route   POST /api/v2/legal/traffic-citation/public/offense/:uuid/attachment
 //@access  Requester token
@@ -320,6 +313,7 @@ export const createAttachment = asyncHandler(async (req: Request<{ uuid: string 
   const alreadySent = await Attachment.count({
     where: {
       offenseUuid: offense.uuid,
+      isInternal: { [Op.or]: [false, null] }, // files the court sent never count against the defendant's one file
       ...(latestDecision && { createdAt: { [Op.gt]: latestDecision.createdAt } })
     }
   })
@@ -337,7 +331,7 @@ export const createAttachment = asyncHandler(async (req: Request<{ uuid: string 
     const attachment = await Attachment.create({
       parentId: requester.uuid,
       offenseUuid: offense.uuid,
-      fileName: cleanFileName(file.originalname),
+      fileName: cleanFileName(file.originalname, 'proof'),
       contentType: fileType.mime,
       fileSize: file.size,
       attachment: file.buffer,

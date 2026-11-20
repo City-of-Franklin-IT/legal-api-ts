@@ -34,5 +34,14 @@ const normalizeBody = (req: Request, _res: Response, next: NextFunction) => {
   next()
 }
 
+// For endpoints that take JSON or multipart: a file is optional, but when there is one it is checked the same way
+const verifyFileTypeIfPresent = (req: Request, res: Response, next: NextFunction) => {
+  if(!req.file) return next()
+
+  verifyFileType(req, res, next)
+}
+
 // multipart text fields bypass the global JSON sanitizer, so it is re-applied after multer parses them
+export const optionalUpload = [upload, normalizeBody, inputSanitation, verifyFileTypeIfPresent]
+
 export default [upload, normalizeBody, inputSanitation, verifyFileType]

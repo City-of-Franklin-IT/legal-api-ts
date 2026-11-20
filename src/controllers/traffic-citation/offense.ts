@@ -1,7 +1,9 @@
 import asyncHandler from '@/middleware/async'
 import { ErrorResponse } from '@/utils/errorResponse'
 import editorTracking from '@/utils/editorTracking'
-import { sequelize, Offense, Approval } from '@/models/traffic-citation'
+import detectFileType from '@/utils/detectFileType'
+import cleanFileName from '@/utils/cleanFileName'
+import { sequelize, Offense, Approval, Attachment } from '@/models/traffic-citation'
 
 // Types
 import { Request, Response, NextFunction } from 'express'
@@ -27,16 +29,23 @@ const MAX_COMMENT_LENGTH = 5000
 
 type DecisionBody = { outcome?: Types.Outcome, amount?: number | string | null, comment?: string | null }
 
-//@desc    Record a staff decision on one offense: appends a history row and updates the offense's current outcome
+//@desc    Record a staff decision on one offense: appends a history row and updates the offense's current outcome.
+//         A driving school decision may carry the court's letter (multipart, file field "attachment"): it is stored as an
+//         internal attachment (the defendant never sees it in the portal) in the same transaction as the decision.
 //@route   POST /api/v2/legal/traffic-citation/offense/:uuid/decision
 //@access  citation.admin
 export const createDecision = asyncHandler(async (req: Request<{ uuid: string }, {}, DecisionBody>, res: Response<ControllerResponse & { data: Types.OffenseInterface }>, next: NextFunction) => {
   const { outcome, amount, comment } = req.body ?? {}
+  const file = req.file
 
   const offense = await Offense.findOne({ where: { uuid: req.params.uuid } }) as OffenseRecord | null
 
   if(!offense) {
     return next(new ErrorResponse(`Unable to find offense by uuid ${ req.params.uuid }`, 404))
+  }
+
+  if(file && offense.offenseType !== 'DRIVING_SCHOOL') {
+    return next(new ErrorResponse('A file can only be sent with a driving school decision', 400))
   }
 
   if(!outcome || !allowedOutcomes(offense.offenseType).includes(outcome)) {
@@ -83,6 +92,24 @@ export const createDecision = asyncHandler(async (req: Request<{ uuid: string },
       staffNote: outcome === 'MORE_INFO' ? cleanComment : null,
       updatedBy
     }, { transaction })
+
+    if(file) {
+      // The type comes from the file's own bytes (checked by the upload middleware), never from the browser
+      const fileType = detectFileType(file.buffer)!
+
+      await Attachment.create({
+        parentId: offense.parentId,
+        offenseUuid: offense.uuid,
+        fileName: cleanFileName(file.originalname, 'document'),
+        contentType: fileType.mime,
+        fileSize: file.size,
+        attachment: file.buffer,
+        caption: cleanComment,
+        isInternal: true,
+        createdBy: updatedBy,
+        updatedBy
+      } as Types.AttachmentInterface, { transaction })
+    }
   })
 
   res.status(201).json({ success: true, data: offense })

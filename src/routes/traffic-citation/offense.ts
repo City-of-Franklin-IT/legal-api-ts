@@ -3,6 +3,7 @@ import { createDecision } from '@/controllers/traffic-citation/offense'
 import { entra } from "@/middleware/auth"
 import { requireRole } from "@/utils/requireRole"
 import rateLimiter from "@/middleware/rateLimiter"
+import { optionalUpload } from "@/middleware/upload"
 import uuidParam from './uuidParam'
 
 const router = Router()
@@ -14,6 +15,6 @@ router.param('uuid', uuidParam)
 
 router
   .route('/:uuid/decision')
-  .post(createDecision)
+  .post(optionalUpload, createDecision)
 
 export default router

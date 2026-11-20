@@ -49,7 +49,7 @@ Routes → Auth Middleware → Async Wrapper → Controller → Model → Respon
 - **Public, token** (`/public/*`): a stateless requester token (`@/utils/requesterToken`, `@/middleware/auth/requesterToken`, 20 min) scoped to that one request: read it, upload proof to one of its offenses, send a message.
 - **Staff** (`/request`, `/offense`, `/attachment`): Entra plus the `citation.admin` role (`@/utils/requireRole`).
 
-Offenses hold the current outcome; `approval` is an append-only decision history. Status is derived from offense outcomes, not stored. Uploads (`@/middleware/upload`) accept PDF, JPG, PNG and HEIC/HEIF by file contents only, and are stored as VARBINARY (the `attachment` column is excluded by the model's default scope). Times are `DATETIME2` stored as UTC (`timezone: "+00:00"`); the module's index patches Sequelize's SQL Server `date` parser so a `DATE` reads back as the same calendar day.
+Offenses hold the current outcome; `approval` is an append-only decision history. Status is derived from offense outcomes, not stored. Uploads (`@/middleware/upload`) accept PDF, JPG, PNG and HEIC/HEIF by file contents only, and are stored as VARBINARY (the `attachment` column is excluded by the model's default scope). A driving school decision (`POST /offense/:uuid/decision`) may be multipart with the court's letter in field `attachment`; the letter is stored with `isInternal = true` in the same transaction as the decision, the defendant never sees it, and it does not count toward their one proof file. Times are `DATETIME2` stored as UTC (`timezone: "+00:00"`); the module's index patches Sequelize's SQL Server `date` parser so a `DATE` reads back as the same calendar day.
 
 ### Models
 
