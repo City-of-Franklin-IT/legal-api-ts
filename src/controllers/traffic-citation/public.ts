@@ -333,18 +333,27 @@ export const createAttachment = asyncHandler(async (req: Request<{ uuid: string 
   // The type comes from the file's own bytes (checked by the upload middleware), never from the browser
   const fileType = detectFileType(file.buffer)!
 
-  const created = await Attachment.create({
-    parentId: requester.uuid,
-    offenseUuid: offense.uuid,
-    fileName: cleanFileName(file.originalname),
-    contentType: fileType.mime,
-    fileSize: file.size,
-    attachment: file.buffer,
-    caption: typeof req.body.caption === 'string' ? req.body.caption.slice(0, 500) : null,
-    isInternal: false,
-    createdBy: email,
-    updatedBy: email
-  } as Types.AttachmentInterface) as AttachmentRecord
+  const created = await sequelize.transaction(async (transaction) => {
+    const attachment = await Attachment.create({
+      parentId: requester.uuid,
+      offenseUuid: offense.uuid,
+      fileName: cleanFileName(file.originalname),
+      contentType: fileType.mime,
+      fileSize: file.size,
+      attachment: file.buffer,
+      caption: typeof req.body.caption === 'string' ? req.body.caption.slice(0, 500) : null,
+      isInternal: false,
+      createdBy: email,
+      updatedBy: email
+    } as Types.AttachmentInterface, { transaction }) as AttachmentRecord
+
+    // Answering a More info request sends the offense back to staff for review
+    if(offense.outcome === 'MORE_INFO') {
+      await offense.update({ outcome: 'SUBMITTED', updatedBy: email }, { transaction })
+    }
+
+    return attachment
+  })
 
   res.status(201).json({
     success: true,
