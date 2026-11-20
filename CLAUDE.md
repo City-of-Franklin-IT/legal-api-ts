@@ -43,7 +43,13 @@ Routes → Auth Middleware → Async Wrapper → Controller → Model → Respon
 
 ### Traffic Citation module
 
-`traffic-citation` (separate DB, see `TRAFFIC_CITATION_*` env vars) has staff routes (Entra) plus `/public/*` routes. Public follow-up routes authenticate with a stateless requester token (`@/utils/requesterToken`, `@/middleware/auth/requesterToken`) minted by `POST /requester/:uuid/token`. Attachments are uploaded with multer (`@/middleware/upload`) and stored as VARBINARY; the `attachment` column is excluded by the model's default scope.
+`traffic-citation` (own database `court_traffic_citation`, see `TRAFFIC_CITATION_*` env vars; design in the `citation-portal-vite-ts` repo, `docs/SCHEMA.md`) serves the Traffic Citation Portal. Three auth tiers:
+
+- **Public, open** (`/public/request`, `/public/request/:uuid/verify`): create a request, or confirm email + phone to get a token. Rate limited per IP; verify is also limited per request.
+- **Public, token** (`/public/*`): a stateless requester token (`@/utils/requesterToken`, `@/middleware/auth/requesterToken`, 20 min) scoped to that one request: read it, upload proof to one of its offenses, send a message.
+- **Staff** (`/request`, `/offense`, `/attachment`): Entra plus the `citation.admin` role (`@/utils/requireRole`).
+
+Offenses hold the current outcome; `approval` is an append-only decision history. Status is derived from offense outcomes, not stored. Uploads (`@/middleware/upload`) accept PDF, JPG, PNG and HEIC/HEIF by file contents only, and are stored as VARBINARY (the `attachment` column is excluded by the model's default scope). Times are `DATETIME2` stored as UTC (`timezone: "+00:00"`); the module's index patches Sequelize's SQL Server `date` parser so a `DATE` reads back as the same calendar day.
 
 ### Models
 

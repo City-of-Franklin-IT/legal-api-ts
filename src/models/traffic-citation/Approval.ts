@@ -10,7 +10,7 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     declare id: number
     declare parentId: string
     declare outcome: Types.Outcome
-    declare amount: string | null
+    declare amount: number | null
     declare comment: string | null
     declare uuid: string
     declare createdAt: Date
@@ -37,7 +37,12 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       allowNull: false
     },
     amount: {
-      type: dataTypes.DECIMAL(10, 2)
+      type: dataTypes.DECIMAL(10, 2),
+      // SQL Server returns decimals as numbers on read but our writes are strings; always hand out a number
+      get() {
+        const value = this.getDataValue('amount') as unknown
+        return value === null || value === undefined ? null : Number(value)
+      }
     },
     comment: {
       type: dataTypes.TEXT

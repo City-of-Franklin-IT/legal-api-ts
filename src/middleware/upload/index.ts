@@ -12,13 +12,17 @@ const upload = multer({
 }).single('attachment')
 
 // The client-supplied mime type is ignored; only the file's own bytes decide whether it is allowed
+const ALLOWED_MIMES = ['application/pdf', 'image/jpeg', 'image/png', 'image/heic']
+
 const verifyFileType = (req: Request, _res: Response, next: NextFunction) => {
   if(!req.file) {
     return next(new ErrorResponse('An attachment file is required', 400))
   }
 
-  if(!detectFileType(req.file.buffer)) {
-    return next(new ErrorResponse('Only PDF and image files (JPEG, PNG, GIF, WebP) are allowed', 400))
+  const fileType = detectFileType(req.file.buffer)
+
+  if(!fileType || !ALLOWED_MIMES.includes(fileType.mime)) {
+    return next(new ErrorResponse('Only PDF, JPG, PNG and HEIC/HEIF files are allowed', 400))
   }
 
   next()

@@ -1,7 +1,6 @@
 import { Op } from 'sequelize'
 import asyncHandler from '@/middleware/async'
 import { ErrorResponse } from '@/utils/errorResponse'
-import { signRequesterToken } from '@/utils/requesterToken'
 import { Requester, Offense, Approval, Correspondence, Attachment } from '@/models/traffic-citation'
 
 // Types
@@ -152,25 +151,4 @@ export const setDueDate = asyncHandler(async (req: Request<{ uuid: string }, {},
   await request.update({ dueDate })
 
   res.status(200).json({ success: true, data: { dueDate: request.dueDate } })
-})
-
-//@desc    Create a token (and link) letting the requester submit back to their request
-//@route   POST /api/v2/legal/traffic-citation/request/:uuid/token
-//@access  citation.admin
-export const createRequesterToken = asyncHandler(async (req: Request<{ uuid: string }>, res: Response<ControllerResponse & { data: { token: string, url: string } }>, next: NextFunction) => {
-  const requester = await Requester.findOne({ where: { uuid: req.params.uuid } }) as RequesterRecord | null
-
-  if(!requester) {
-    return next(new ErrorResponse(`Unable to create token for requester uuid ${ req.params.uuid }`, 404))
-  }
-
-  const token = signRequesterToken(requester.uuid)
-
-  res.status(201).json({
-    success: true,
-    data: {
-      token,
-      url: `${ process.env.TRAFFIC_CITATION_PUBLIC_URL }?token=${ encodeURIComponent(token) }`
-    }
-  })
 })

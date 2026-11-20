@@ -33,7 +33,7 @@ export interface OffenseInterface {
   parentId: string
   offenseType: OffenseType
   outcome: Outcome
-  amount: string | null
+  amount: number | null
   staffNote: string | null
   uuid: string
   createdAt: Date
@@ -53,7 +53,7 @@ export interface ApprovalInterface extends Omit<BaseInterface, 'updatedBy' | 'up
   id: number
   parentId: string
   outcome: Outcome
-  amount: string | null
+  amount: number | null
   comment: string | null
 }
 

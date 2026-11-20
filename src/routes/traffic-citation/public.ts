@@ -1,8 +1,9 @@
 import { Router } from "express"
-import { submitRequester, getMe, getCorrespondences, createCorrespondence, getAttachments, downloadAttachment, createAttachment } from '@/controllers/traffic-citation/public'
+import { createRequest, verifyRequest, getMe, getCorrespondences, createCorrespondence, getAttachments, downloadAttachment, createAttachment } from '@/controllers/traffic-citation/public'
 import { requesterToken } from "@/middleware/auth/requesterToken"
 import rateLimiter from "@/middleware/rateLimiter"
 import submissionLimiter from "@/middleware/rateLimiter/submission"
+import { verifyIpLimiter, verifyRequestLimiter } from "@/middleware/rateLimiter/verify"
 import upload from "@/middleware/upload"
 import uuidParam from './uuidParam'
 
@@ -10,12 +11,16 @@ const router = Router()
 
 router.param('uuid', uuidParam)
 
-// Unauthenticated initial submission
+// Tier A, no token: create a request, or confirm email and phone to get a token
 router
-  .route('/requester')
-  .post(submissionLimiter, submitRequester)
+  .route('/request')
+  .post(submissionLimiter, createRequest)
 
-// Everything below requires the emailed requester token
+router
+  .route('/request/:uuid/verify')
+  .post(verifyIpLimiter, verifyRequestLimiter, verifyRequest)
+
+// Tier B: everything below requires the short-lived requester token
 router.use(requesterToken)
 router.use(rateLimiter)
 
@@ -29,9 +34,12 @@ router
   .post(createCorrespondence)
 
 router
+  .route('/offense/:uuid/attachment')
+  .post(upload, createAttachment)
+
+router
   .route('/attachment')
   .get(getAttachments)
-  .post(upload, createAttachment)
 
 router
   .route('/attachment/:uuid/download')

@@ -43,7 +43,7 @@ export const createDecision = asyncHandler(async (req: Request<{ uuid: string },
     return next(new ErrorResponse(`Outcome is not allowed for a ${ offense.offenseType } offense`, 400))
   }
 
-  let cleanAmount: string | null = null
+  let cleanAmount: number | null = null
 
   if(OWES_MONEY.includes(outcome)) {
     const parsed = typeof amount === 'string' ? Number(amount) : amount
@@ -52,7 +52,7 @@ export const createDecision = asyncHandler(async (req: Request<{ uuid: string },
       return next(new ErrorResponse('A valid amount (0 or more, at most two decimals) is required for this outcome', 400))
     }
 
-    cleanAmount = parsed.toFixed(2)
+    cleanAmount = Number(parsed.toFixed(2))
   }
 
   const cleanComment = typeof comment === 'string' && comment.trim() ? comment.trim() : null

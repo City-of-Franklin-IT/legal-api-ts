@@ -25,9 +25,19 @@ const db = {
   Attachment: {} as ModelStatic<Model<Types.AttachmentInterface>>
 } as Types.DatabaseInterface
 
+// Sequelize's SQL Server DATEONLY parser runs moment(value).format() on the driver's UTC-midnight Date, which formats
+// in the server's local zone and returns the previous day west of UTC (a due date of 12/31 read back as 12/30).
+// This module's connection uses useUTC and stores UTC, so read a `date` as the UTC calendar day instead.
+// The parser store is shared by every SQL Server connection in the process; no city-law model reads a `date` column.
+const mssqlTypes = (DataTypes as unknown as { mssql: { DATEONLY: { parse: (value: unknown) => string } } }).mssql
+
+mssqlTypes.DATEONLY.parse = (value: unknown) => value instanceof Date ? value.toISOString().slice(0, 10) : String(value)
+
 const dbPath: DBPathInterface = cfg[env].databases['traffic-citation']
 
 db.sequelize = new Sequelize(dbPath.database, dbPath.username, dbPath.password, dbPath)
+
+;(db.sequelize as unknown as { connectionManager: { refreshTypeParser: (types: unknown) => void } }).connectionManager.refreshTypeParser(mssqlTypes)
 
 db.Requester = RequesterModel(db.sequelize, DataTypes)
 db.Offense = OffenseModel(db.sequelize, DataTypes)

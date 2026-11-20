@@ -22,7 +22,7 @@ export default {
         "dialectOptions": {
           useUTC: true
         },
-        "timezone": "US/Chicago",
+        "timezone": "+00:00",
         "logging": false
       }
     }
@@ -50,7 +50,7 @@ export default {
         "dialectOptions": {
           useUTC: true
         },
-        "timezone": "US/Chicago",
+        "timezone": "+00:00",
         "logging": false
       }
     }
