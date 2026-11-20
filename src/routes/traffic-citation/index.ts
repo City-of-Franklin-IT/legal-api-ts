@@ -1,6 +1,6 @@
 import path from 'path'
-import requester from './requester'
-import correspondence from './correspondence'
+import request from './request'
+import offense from './offense'
 import attachment from './attachment'
 import publicRoutes from './public'
 
@@ -14,8 +14,8 @@ export default (app: Express) => {
     return app.use(`${ baseURL }${ urlPath }`, router)
   }
 
-  setURL('/requester', requester)
-  setURL('/correspondence', correspondence)
+  setURL('/request', request)
+  setURL('/offense', offense)
   setURL('/attachment', attachment)
   setURL('/public', publicRoutes)
 }

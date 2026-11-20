@@ -2,7 +2,7 @@ import { Op } from 'sequelize'
 import asyncHandler from '@/middleware/async'
 import { ErrorResponse } from '@/utils/errorResponse'
 import { signRequesterToken } from '@/utils/requesterToken'
-import { sequelize, Requester, Offense, Correspondence, Approval, Attachment } from '@/models/traffic-citation'
+import { Requester, Offense, Approval, Correspondence, Attachment } from '@/models/traffic-citation'
 
 // Types
 import { Request, Response, NextFunction } from 'express'
@@ -11,126 +11,152 @@ import { ControllerResponse } from '@/controllers/types'
 import * as Types from '@/models/traffic-citation/types'
 
 type RequesterRecord = Model<Types.RequesterInterface> & Types.RequesterInterface
+type OffenseRecord = Model<Types.OffenseInterface> & Types.OffenseInterface
 
-const pickRequesterFields = (body: Partial<Types.RequesterCreateInterface>): Partial<Types.RequesterCreateInterface> => {
-  const { citationNumber, firstName, lastName, email, licenseNumber, licenseState } = body ?? {}
+export type RequestStatus = 'NEEDS_REVIEW' | 'MORE_INFO' | 'COMPLETED'
 
-  return { citationNumber, firstName, lastName, email, licenseNumber, licenseState }
+const STATUSES: RequestStatus[] = ['NEEDS_REVIEW', 'MORE_INFO', 'COMPLETED']
+
+// Status is derived from the offense outcomes and is not stored (docs/SCHEMA.md)
+export const deriveStatus = (offenses: Array<Pick<Types.OffenseInterface, 'outcome'>>): RequestStatus => {
+  if(offenses.some(offense => offense.outcome === 'SUBMITTED')) return 'NEEDS_REVIEW'
+  if(offenses.some(offense => offense.outcome === 'MORE_INFO')) return 'MORE_INFO'
+
+  return 'COMPLETED'
 }
 
-//@desc    Get requesters by query string
-//@route   GET /api/v2/legal/traffic-citation/requester?searchValue=
-//@access  Private
-export const getRequesters = asyncHandler(async (req: Request<{}, {}, {}, { searchValue?: string }>, res: Response<ControllerResponse & { data: Types.RequesterInterface[] }>) => {
-  const searchValue = `%${ req.query.searchValue ?? '' }%`
+type MatchFields = Pick<Types.RequesterInterface, 'uuid' | 'citationNumber' | 'licenseState' | 'licenseNumber'>
 
-  const requesters = await Requester.findAll({
-    where: {
+// Duplicates are flagged for staff, never blocked (SPEC decision 8)
+const isDuplicateOf = (a: MatchFields, b: MatchFields) => {
+  if(a.uuid === b.uuid) return false
+
+  const sameCitation = !!a.citationNumber && a.citationNumber === b.citationNumber
+  const sameLicense = !!a.licenseNumber && a.licenseNumber === b.licenseNumber && a.licenseState === b.licenseState
+
+  return sameCitation || sameLicense
+}
+
+//@desc    Staff queue: requests with their derived status and duplicate flag (no license, DOB or phone)
+//@route   GET /api/v2/legal/traffic-citation/request?searchValue=&requestType=&status=
+//@access  citation.admin
+export const getRequests = asyncHandler(async (req: Request<{}, {}, {}, { searchValue?: string, requestType?: string, status?: string }>, res: Response, next: NextFunction) => {
+  const { searchValue, requestType, status } = req.query
+
+  if(requestType && !(Types.REQUEST_TYPES as readonly string[]).includes(requestType)) {
+    return next(new ErrorResponse('Invalid requestType', 400))
+  }
+
+  if(status && !STATUSES.includes(status as RequestStatus)) {
+    return next(new ErrorResponse('Invalid status', 400))
+  }
+
+  const search = `%${ searchValue ?? '' }%`
+
+  const where = {
+    ...(requestType && { requestType }),
+    ...(searchValue && {
       [Op.or]: [
-        { firstName: { [Op.like]: searchValue } },
-        { lastName: { [Op.like]: searchValue } },
-        { email: { [Op.like]: searchValue } },
-        { citationNumber: { [Op.like]: searchValue } }
+        { firstName: { [Op.like]: search } },
+        { lastName: { [Op.like]: search } },
+        { email: { [Op.like]: search } },
+        { citationNumber: { [Op.like]: search } }
       ]
-    },
-    order: [['lastName', 'asc'], ['firstName', 'asc']]
-  }) as RequesterRecord[]
+    })
+  }
 
-  res.status(200).json({
-    success: true,
-    data: requesters
-  })
+  const requests = await Requester.findAll({
+    where,
+    attributes: ['uuid', 'requestType', 'firstName', 'lastName', 'email', 'citationNumber', 'licenseState', 'licenseNumber', 'createdAt'],
+    include: [{ model: Offense, attributes: ['offenseType', 'outcome'] }],
+    order: [['createdAt', 'desc']]
+  }) as Array<RequesterRecord & { Offenses: OffenseRecord[] }>
+
+  // Duplicates are checked against every request, not just the filtered ones
+  const everyone = await Requester.findAll({ attributes: ['uuid', 'citationNumber', 'licenseState', 'licenseNumber'] }) as RequesterRecord[]
+
+  const data = requests
+    .map(request => ({
+      uuid: request.uuid,
+      requestType: request.requestType,
+      firstName: request.firstName,
+      lastName: request.lastName,
+      email: request.email,
+      citationNumber: request.citationNumber,
+      createdAt: request.createdAt,
+      status: deriveStatus(request.Offenses),
+      offenses: request.Offenses.map(({ offenseType, outcome }) => ({ offenseType, outcome })),
+      duplicate: everyone.some(other => isDuplicateOf(request, other))
+    }))
+    .filter(request => !status || request.status === status)
+
+  res.status(200).json({ success: true, data })
 })
 
-//@desc    Get requester by uuid, with correspondence, approvals and attachments
-//@route   GET /api/v2/legal/traffic-citation/requester/:uuid
-//@access  Private
-export const getRequester = asyncHandler(async (req: Request<{ uuid: string }>, res: Response<ControllerResponse & { data: Types.RequesterInterface }>, next: NextFunction) => {
-  const requester = await Requester.findOne({
+//@desc    Staff review: full request, offenses with decision history, correspondence, attachment metadata, possible duplicates
+//@route   GET /api/v2/legal/traffic-citation/request/:uuid
+//@access  citation.admin
+export const getRequest = asyncHandler(async (req: Request<{ uuid: string }>, res: Response, next: NextFunction) => {
+  const request = await Requester.findOne({
     where: { uuid: req.params.uuid },
-    order: [[Offense, 'id', 'asc'], [Correspondence, 'createdAt', 'asc'], [Attachment, 'createdAt', 'asc']],
+    order: [[Offense, 'id', 'asc'], [Offense, Approval, 'createdAt', 'asc'], [Correspondence, 'createdAt', 'asc'], [Attachment, 'createdAt', 'asc']],
     include: [
       { model: Offense, include: [{ model: Approval }] },
       { model: Correspondence },
       { model: Attachment, attributes: { exclude: ['attachment'] } }
     ]
-  }) as RequesterRecord | null
+  }) as (RequesterRecord & { Offenses: OffenseRecord[] }) | null
 
-  if(!requester) {
-    return next(new ErrorResponse(`Unable to return requester by uuid ${ req.params.uuid }`, 404))
+  if(!request) {
+    return next(new ErrorResponse(`Unable to return request by uuid ${ req.params.uuid }`, 404))
   }
 
-  res.status(200).json({
-    success: true,
-    data: requester
-  })
+  const others = await Requester.findAll({
+    where: { uuid: { [Op.ne]: request.uuid } },
+    attributes: ['uuid', 'requestType', 'citationNumber', 'licenseState', 'licenseNumber', 'createdAt'],
+    include: [{ model: Offense, attributes: ['outcome'] }],
+    order: [['createdAt', 'desc']]
+  }) as Array<RequesterRecord & { Offenses: OffenseRecord[] }>
+
+  const duplicates = others
+    .filter(other => isDuplicateOf(request, other))
+    .map(other => ({ uuid: other.uuid, requestType: other.requestType, createdAt: other.createdAt, status: deriveStatus(other.Offenses) }))
+
+  res.status(200).json({ success: true, data: { request, duplicates } })
 })
 
-//@desc    Create requester
-//@route   POST /api/v2/legal/traffic-citation/requester
-//@access  Private
-export const createRequester = asyncHandler(async (req: Request<{}, {}, Types.RequesterCreateInterface>, res: Response<ControllerResponse & { data: Types.RequesterInterface }>) => {
-  const requester = await Requester.create(pickRequesterFields(req.body) as Types.RequesterInterface) as RequesterRecord
+const isRealDate = (value: string) => {
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
 
-  res.status(201).json({
-    success: true,
-    data: requester
-  })
-})
+  const date = new Date(`${ value }T00:00:00Z`)
 
-//@desc    Update requester
-//@route   PUT /api/v2/legal/traffic-citation/requester/:uuid
-//@access  Private
-export const updateRequester = asyncHandler(async (req: Request<{ uuid: string }, {}, Partial<Types.RequesterCreateInterface>>, res: Response<ControllerResponse & { data: Types.RequesterInterface }>, next: NextFunction) => {
-  const requester = await Requester.findOne({ where: { uuid: req.params.uuid } }) as RequesterRecord | null
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
+}
 
-  if(!requester) {
-    return next(new ErrorResponse(`Unable to update requester by uuid ${ req.params.uuid }`, 404))
+//@desc    Set (or clear with null) the one payable-by date for the whole request
+//@route   PUT /api/v2/legal/traffic-citation/request/:uuid/due-date
+//@access  citation.admin
+export const setDueDate = asyncHandler(async (req: Request<{ uuid: string }, {}, { dueDate?: string | null }>, res: Response<ControllerResponse & { data: { dueDate: string | null } }>, next: NextFunction) => {
+  const dueDate = req.body?.dueDate
+
+  if(dueDate !== null && (typeof dueDate !== 'string' || !isRealDate(dueDate))) {
+    return next(new ErrorResponse('dueDate must be a YYYY-MM-DD date or null', 400))
   }
 
-  const fields = pickRequesterFields(req.body)
+  const request = await Requester.findOne({ where: { uuid: req.params.uuid } }) as RequesterRecord | null
 
-  // Only apply fields that were sent so a partial update doesn't null the rest
-  const updates = Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined))
-
-  await requester.update(updates)
-
-  res.status(200).json({
-    success: true,
-    data: requester
-  })
-})
-
-//@desc    Delete requester and everything attached to it
-//@route   DELETE /api/v2/legal/traffic-citation/requester/:uuid
-//@access  Private
-export const deleteRequester = asyncHandler(async (req: Request<{ uuid: string }>, res: Response<ControllerResponse>, next: NextFunction) => {
-  const requester = await Requester.findOne({ where: { uuid: req.params.uuid } }) as RequesterRecord | null
-
-  if(!requester) {
-    return next(new ErrorResponse(`Unable to delete requester by uuid ${ req.params.uuid }`, 404))
+  if(!request) {
+    return next(new ErrorResponse(`Unable to update request by uuid ${ req.params.uuid }`, 404))
   }
 
-  // Child foreign keys don't cascade, so remove them first
-  await sequelize.transaction(async (transaction) => {
-    const where = { parentId: requester.uuid }
-    const offenseUuids = (await Offense.findAll({ where, attributes: ['uuid'], transaction }) as Array<Model<Types.OffenseInterface> & Types.OffenseInterface>).map(offense => offense.uuid)
+  await request.update({ dueDate })
 
-    await Correspondence.destroy({ where, transaction })
-    await Attachment.destroy({ where, transaction })
-    await Approval.destroy({ where: { parentId: offenseUuids }, transaction })
-    await Offense.destroy({ where, transaction })
-    await requester.destroy({ transaction })
-  })
-
-  res.status(200).json({
-    success: true
-  })
+  res.status(200).json({ success: true, data: { dueDate: request.dueDate } })
 })
 
 //@desc    Create a token (and link) letting the requester submit back to their request
-//@route   POST /api/v2/legal/traffic-citation/requester/:uuid/token
-//@access  Private
+//@route   POST /api/v2/legal/traffic-citation/request/:uuid/token
+//@access  citation.admin
 export const createRequesterToken = asyncHandler(async (req: Request<{ uuid: string }>, res: Response<ControllerResponse & { data: { token: string, url: string } }>, next: NextFunction) => {
   const requester = await Requester.findOne({ where: { uuid: req.params.uuid } }) as RequesterRecord | null
 

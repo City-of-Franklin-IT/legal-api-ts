@@ -1,7 +1,8 @@
 import asyncHandler from '@/middleware/async'
 import { ErrorResponse } from '@/utils/errorResponse'
 import isUuid from '@/utils/isUuid'
-import { Requester, Correspondence } from '@/models/traffic-citation'
+import editorTracking from '@/utils/editorTracking'
+import { Requester, Offense, Correspondence } from '@/models/traffic-citation'
 
 // Types
 import { Request, Response, NextFunction } from 'express'
@@ -11,92 +12,32 @@ import * as Types from '@/models/traffic-citation/types'
 
 type CorrespondenceRecord = Model<Types.CorrespondenceInterface> & Types.CorrespondenceInterface
 
-//@desc    Get correspondence by requester uuid
-//@route   GET /api/v2/legal/traffic-citation/correspondence?parentId=
-//@access  Private
-export const getCorrespondences = asyncHandler(async (req: Request<{}, {}, {}, { parentId?: string }>, res: Response<ControllerResponse & { data: Types.CorrespondenceInterface[] }>, next: NextFunction) => {
-  if(!isUuid(req.query.parentId)) {
-    return next(new ErrorResponse('A valid parentId is required', 400))
+//@desc    Staff message on a request, optionally about one offense
+//@route   POST /api/v2/legal/traffic-citation/request/:uuid/correspondence
+//@access  citation.admin
+export const createCorrespondence = asyncHandler(async (req: Request<{ uuid: string }, {}, { message?: string, offenseUuid?: string }>, res: Response<ControllerResponse & { data: Types.CorrespondenceInterface }>, next: NextFunction) => {
+  const { message, offenseUuid } = req.body ?? {}
+
+  if(typeof message !== 'string' || !message.trim()) {
+    return next(new ErrorResponse('A message is required', 400))
   }
 
-  const correspondences = await Correspondence.findAll({
-    where: { parentId: req.query.parentId },
-    order: [['createdAt', 'asc']]
-  }) as CorrespondenceRecord[]
-
-  res.status(200).json({
-    success: true,
-    data: correspondences
-  })
-})
-
-//@desc    Get correspondence by uuid
-//@route   GET /api/v2/legal/traffic-citation/correspondence/:uuid
-//@access  Private
-export const getCorrespondence = asyncHandler(async (req: Request<{ uuid: string }>, res: Response<ControllerResponse & { data: Types.CorrespondenceInterface }>, next: NextFunction) => {
-  const correspondence = await Correspondence.findOne({ where: { uuid: req.params.uuid } }) as CorrespondenceRecord | null
-
-  if(!correspondence) {
-    return next(new ErrorResponse(`Unable to return correspondence by uuid ${ req.params.uuid }`, 404))
+  if(!await Requester.findOne({ where: { uuid: req.params.uuid } })) {
+    return next(new ErrorResponse(`Unable to find request by uuid ${ req.params.uuid }`, 404))
   }
 
-  res.status(200).json({
-    success: true,
-    data: correspondence
-  })
-})
-
-//@desc    Create correspondence
-//@route   POST /api/v2/legal/traffic-citation/correspondence
-//@access  Private
-export const createCorrespondence = asyncHandler(async (req: Request<{}, {}, { parentId: string, message: string }>, res: Response<ControllerResponse & { data: Types.CorrespondenceInterface }>, next: NextFunction) => {
-  if(!isUuid(req.body.parentId) || !await Requester.findOne({ where: { uuid: req.body.parentId } })) {
-    return next(new ErrorResponse(`Unable to find requester by parentId ${ req.body.parentId }`, 404))
+  if(offenseUuid !== undefined && offenseUuid !== null) {
+    if(!isUuid(offenseUuid) || !await Offense.findOne({ where: { uuid: offenseUuid, parentId: req.params.uuid } })) {
+      return next(new ErrorResponse('That offense does not belong to this request', 400))
+    }
   }
 
   const correspondence = await Correspondence.create({
-    parentId: req.body.parentId,
-    message: req.body.message,
-    createdBy: String(req.entra?.preferred_username.toLowerCase())
+    parentId: req.params.uuid,
+    offenseUuid: offenseUuid ?? null,
+    message: message.trim(),
+    createdBy: editorTracking(req).updatedBy
   } as Types.CorrespondenceInterface) as CorrespondenceRecord
 
-  res.status(201).json({
-    success: true,
-    data: correspondence
-  })
-})
-
-//@desc    Update correspondence message (no audit columns exist for updates)
-//@route   PUT /api/v2/legal/traffic-citation/correspondence/:uuid
-//@access  Private
-export const updateCorrespondence = asyncHandler(async (req: Request<{ uuid: string }, {}, { message: string }>, res: Response<ControllerResponse & { data: Types.CorrespondenceInterface }>, next: NextFunction) => {
-  const correspondence = await Correspondence.findOne({ where: { uuid: req.params.uuid } }) as CorrespondenceRecord | null
-
-  if(!correspondence) {
-    return next(new ErrorResponse(`Unable to update correspondence by uuid ${ req.params.uuid }`, 404))
-  }
-
-  await correspondence.update({ message: req.body.message })
-
-  res.status(200).json({
-    success: true,
-    data: correspondence
-  })
-})
-
-//@desc    Delete correspondence
-//@route   DELETE /api/v2/legal/traffic-citation/correspondence/:uuid
-//@access  Private
-export const deleteCorrespondence = asyncHandler(async (req: Request<{ uuid: string }>, res: Response<ControllerResponse>, next: NextFunction) => {
-  const correspondence = await Correspondence.findOne({ where: { uuid: req.params.uuid } }) as CorrespondenceRecord | null
-
-  if(!correspondence) {
-    return next(new ErrorResponse(`Unable to delete correspondence by uuid ${ req.params.uuid }`, 404))
-  }
-
-  await correspondence.destroy()
-
-  res.status(200).json({
-    success: true
-  })
+  res.status(201).json({ success: true, data: correspondence })
 })

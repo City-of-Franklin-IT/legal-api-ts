@@ -25,7 +25,7 @@ export const entra = asyncHandler(async (req: Request, _res: Response, next: Nex
       nbf: iat,
       oid: '',
       preferred_username: 'test.o365-3@franklintn.gov',
-      roles: ["task.sudo", "task.write", "task.admin"],
+      roles: ["task.sudo", "task.write", "task.admin", "citation.admin"],
       sid: '',
       sub: '',
       tid: '',
