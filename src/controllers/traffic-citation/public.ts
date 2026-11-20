@@ -5,7 +5,7 @@ import { ErrorResponse } from '@/utils/errorResponse'
 import { signRequesterToken } from '@/utils/requesterToken'
 import isUuid from '@/utils/isUuid'
 import detectFileType from '@/utils/detectFileType'
-import { sequelize, Requester, Offense, Correspondence, Attachment } from '@/models/traffic-citation'
+import { sequelize, Requester, Offense, Approval, Correspondence, Attachment } from '@/models/traffic-citation'
 import { sendAttachment } from './attachment'
 
 // Types
@@ -20,9 +20,6 @@ type CorrespondenceRecord = Model<Types.CorrespondenceInterface> & Types.Corresp
 type AttachmentRecord = Model<Types.AttachmentInterface> & Types.AttachmentInterface
 
 const CORRECTABLE_TYPES = Types.OFFENSE_TYPES.filter(type => type !== 'DRIVING_SCHOOL')
-
-// One offense can carry more than one file until the court answers F17; capped so nobody fills the database
-const MAX_FILES_PER_OFFENSE = 5
 
 // Proof can be added only while staff have not decided, or have asked for more
 const OPEN_FOR_PROOF: Types.Outcome[] = ['SUBMITTED', 'MORE_INFO']
@@ -316,8 +313,19 @@ export const createAttachment = asyncHandler(async (req: Request<{ uuid: string 
     return next(new ErrorResponse('This offense has already been decided', 409))
   }
 
-  if(await Attachment.count({ where: { offenseUuid: offense.uuid } }) >= MAX_FILES_PER_OFFENSE) {
-    return next(new ErrorResponse(`At most ${ MAX_FILES_PER_OFFENSE } files can be attached to one offense`, 409))
+  // One file per offense (SPEC F17, decided 2026-11-20). After staff ask for more info the defendant may send one
+  // more file, so only files added since the latest staff decision count; earlier files are kept for the record.
+  const latestDecision = await Approval.findOne({ where: { parentId: offense.uuid }, order: [['createdAt', 'desc']] }) as (Model<Types.ApprovalInterface> & Types.ApprovalInterface) | null
+
+  const alreadySent = await Attachment.count({
+    where: {
+      offenseUuid: offense.uuid,
+      ...(latestDecision && { createdAt: { [Op.gt]: latestDecision.createdAt } })
+    }
+  })
+
+  if(alreadySent >= 1) {
+    return next(new ErrorResponse('This offense already has a file. You can send another only if the court asks for more information.', 409))
   }
 
   const email = requester.email.toLowerCase()
