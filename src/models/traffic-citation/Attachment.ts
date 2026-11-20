@@ -9,6 +9,10 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
   class Attachment extends Model<Types.AttachmentInterface> {
     declare id: number
     declare parentId: string
+    declare offenseUuid: string | null
+    declare fileName: string
+    declare contentType: string
+    declare fileSize: number
     declare attachment: Buffer
     declare caption: string | null
     declare isInternal: boolean | null
@@ -18,8 +22,9 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     declare updatedAt: Date
     declare updatedBy: string
 
-    static associate({ Requester }: { Requester: ModelStatic<Model<Types.RequesterInterface>> }) {
+    static associate({ Requester, Offense }: { Requester: ModelStatic<Model<Types.RequesterInterface>>, Offense: ModelStatic<Model<Types.OffenseInterface>> }) {
       this.belongsTo(Requester, { targetKey: 'uuid', foreignKey: 'parentId' })
+      this.belongsTo(Offense, { targetKey: 'uuid', foreignKey: 'offenseUuid' })
     }
   }
 
@@ -32,6 +37,21 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     },
     parentId: {
       type: dataTypes.UUID,
+      allowNull: false
+    },
+    offenseUuid: {
+      type: dataTypes.UUID
+    },
+    fileName: {
+      type: dataTypes.STRING(255),
+      allowNull: false
+    },
+    contentType: {
+      type: dataTypes.STRING(100),
+      allowNull: false
+    },
+    fileSize: {
+      type: dataTypes.BIGINT,
       allowNull: false
     },
     attachment: {

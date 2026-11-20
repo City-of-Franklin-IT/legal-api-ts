@@ -1,7 +1,6 @@
 import path from 'path'
 import requester from './requester'
 import correspondence from './correspondence'
-import approval from './approval'
 import attachment from './attachment'
 import publicRoutes from './public'
 
@@ -17,7 +16,6 @@ export default (app: Express) => {
 
   setURL('/requester', requester)
   setURL('/correspondence', correspondence)
-  setURL('/approval', approval)
   setURL('/attachment', attachment)
   setURL('/public', publicRoutes)
 }

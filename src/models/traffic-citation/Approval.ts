@@ -9,16 +9,15 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
   class Approval extends Model<Types.ApprovalInterface> {
     declare id: number
     declare parentId: string
-    declare approval: boolean | null
+    declare outcome: Types.Outcome
+    declare amount: string | null
     declare comment: string | null
     declare uuid: string
     declare createdAt: Date
     declare createdBy: string
-    declare updatedAt: Date
-    declare updatedBy: string
 
-    static associate({ Requester }: { Requester: ModelStatic<Model<Types.RequesterInterface>> }) {
-      this.belongsTo(Requester, { targetKey: 'uuid', foreignKey: 'parentId' })
+    static associate({ Offense }: { Offense: ModelStatic<Model<Types.OffenseInterface>> }) {
+      this.belongsTo(Offense, { targetKey: 'uuid', foreignKey: 'parentId' })
     }
   }
 
@@ -33,8 +32,12 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       type: dataTypes.UUID,
       allowNull: false
     },
-    approval: {
-      type: dataTypes.BOOLEAN
+    outcome: {
+      type: dataTypes.STRING(30),
+      allowNull: false
+    },
+    amount: {
+      type: dataTypes.DECIMAL(10, 2)
     },
     comment: {
       type: dataTypes.TEXT
@@ -48,15 +51,7 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       type: dataTypes.DATE,
       allowNull: false
     },
-    updatedAt: {
-      type: dataTypes.DATE,
-      allowNull: false
-    },
     createdBy: {
-      type: dataTypes.STRING(255),
-      allowNull: false
-    },
-    updatedBy: {
       type: dataTypes.STRING(255),
       allowNull: false
     }
@@ -64,7 +59,8 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     sequelize,
     freezeTableName: true,
     modelName: 'Approval',
-    tableName: 'approval'
+    tableName: 'approval',
+    updatedAt: false
   })
 
   return Approval

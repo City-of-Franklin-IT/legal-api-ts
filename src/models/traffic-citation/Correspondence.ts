@@ -9,13 +9,15 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
   class Correspondence extends Model<Types.CorrespondenceInterface> {
     declare id: number
     declare parentId: string
+    declare offenseUuid: string | null
     declare message: string
     declare uuid: string
     declare createdAt: Date
     declare createdBy: string
 
-    static associate({ Requester }: { Requester: ModelStatic<Model<Types.RequesterInterface>> }) {
+    static associate({ Requester, Offense }: { Requester: ModelStatic<Model<Types.RequesterInterface>>, Offense: ModelStatic<Model<Types.OffenseInterface>> }) {
       this.belongsTo(Requester, { targetKey: 'uuid', foreignKey: 'parentId' })
+      this.belongsTo(Offense, { targetKey: 'uuid', foreignKey: 'offenseUuid' })
     }
   }
 
@@ -29,6 +31,9 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     parentId: {
       type: dataTypes.UUID,
       allowNull: false
+    },
+    offenseUuid: {
+      type: dataTypes.UUID
     },
     message: {
       type: dataTypes.TEXT,

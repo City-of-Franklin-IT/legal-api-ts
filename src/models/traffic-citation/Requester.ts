@@ -8,19 +8,23 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
 
   class Requester extends Model<Types.RequesterInterface> {
     declare id: number
+    declare requestType: Types.RequestType
     declare citationNumber: string | null
     declare firstName: string
     declare lastName: string
     declare email: string
-    declare licenseNumber: string
-    declare licenseState: string
+    declare phone: string
+    declare licenseNumber: string | null
+    declare licenseState: string | null
+    declare dob: string | null
+    declare dueDate: string | null
     declare uuid: string
     declare createdAt: Date
     declare updatedAt: Date
 
-    static associate({ Correspondence, Approval, Attachment }: { Correspondence: ModelStatic<Model<Types.CorrespondenceInterface>>, Approval: ModelStatic<Model<Types.ApprovalInterface>>, Attachment: ModelStatic<Model<Types.AttachmentInterface>> }) {
+    static associate({ Offense, Correspondence, Attachment }: { Offense: ModelStatic<Model<Types.OffenseInterface>>, Correspondence: ModelStatic<Model<Types.CorrespondenceInterface>>, Attachment: ModelStatic<Model<Types.AttachmentInterface>> }) {
+      this.hasMany(Offense, { sourceKey: 'uuid', foreignKey: 'parentId' })
       this.hasMany(Correspondence, { sourceKey: 'uuid', foreignKey: 'parentId' })
-      this.hasMany(Approval, { sourceKey: 'uuid', foreignKey: 'parentId' })
       this.hasMany(Attachment, { sourceKey: 'uuid', foreignKey: 'parentId' })
     }
   }
@@ -31,6 +35,11 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       allowNull: false,
       primaryKey: true,
       autoIncrement: true
+    },
+    requestType: {
+      type: dataTypes.STRING(20),
+      allowNull: false,
+      validate: { isIn: [['DRIVING_SCHOOL', 'CORRECTABLE']] }
     },
     citationNumber: {
       type: dataTypes.STRING(20)
@@ -48,14 +57,22 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       allowNull: false,
       validate: { isEmail: true }
     },
-    licenseNumber: {
-      type: dataTypes.STRING(10),
+    phone: {
+      type: dataTypes.STRING(20),
       allowNull: false
+    },
+    licenseNumber: {
+      type: dataTypes.STRING(25)
     },
     licenseState: {
       type: dataTypes.CHAR(2),
-      allowNull: false,
       validate: { len: [2, 2] }
+    },
+    dob: {
+      type: dataTypes.DATEONLY
+    },
+    dueDate: {
+      type: dataTypes.DATEONLY
     },
     createdAt: {
       type: dataTypes.DATE,

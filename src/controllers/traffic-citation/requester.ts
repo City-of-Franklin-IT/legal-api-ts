@@ -2,7 +2,7 @@ import { Op } from 'sequelize'
 import asyncHandler from '@/middleware/async'
 import { ErrorResponse } from '@/utils/errorResponse'
 import { signRequesterToken } from '@/utils/requesterToken'
-import { sequelize, Requester, Correspondence, Approval, Attachment } from '@/models/traffic-citation'
+import { sequelize, Requester, Offense, Correspondence, Approval, Attachment } from '@/models/traffic-citation'
 
 // Types
 import { Request, Response, NextFunction } from 'express'
@@ -48,10 +48,10 @@ export const getRequesters = asyncHandler(async (req: Request<{}, {}, {}, { sear
 export const getRequester = asyncHandler(async (req: Request<{ uuid: string }>, res: Response<ControllerResponse & { data: Types.RequesterInterface }>, next: NextFunction) => {
   const requester = await Requester.findOne({
     where: { uuid: req.params.uuid },
-    order: [[Correspondence, 'createdAt', 'asc'], [Approval, 'createdAt', 'asc'], [Attachment, 'createdAt', 'asc']],
+    order: [[Offense, 'id', 'asc'], [Correspondence, 'createdAt', 'asc'], [Attachment, 'createdAt', 'asc']],
     include: [
+      { model: Offense, include: [{ model: Approval }] },
       { model: Correspondence },
-      { model: Approval },
       { model: Attachment, attributes: { exclude: ['attachment'] } }
     ]
   }) as RequesterRecord | null
@@ -114,10 +114,12 @@ export const deleteRequester = asyncHandler(async (req: Request<{ uuid: string }
   // Child foreign keys don't cascade, so remove them first
   await sequelize.transaction(async (transaction) => {
     const where = { parentId: requester.uuid }
+    const offenseUuids = (await Offense.findAll({ where, attributes: ['uuid'], transaction }) as Array<Model<Types.OffenseInterface> & Types.OffenseInterface>).map(offense => offense.uuid)
 
     await Correspondence.destroy({ where, transaction })
-    await Approval.destroy({ where, transaction })
     await Attachment.destroy({ where, transaction })
+    await Approval.destroy({ where: { parentId: offenseUuids }, transaction })
+    await Offense.destroy({ where, transaction })
     await requester.destroy({ transaction })
   })
 
