@@ -15,7 +15,7 @@ const CORRECTABLE_OUTCOMES: Types.Outcome[] = ['APPROVED', 'NOT_APPROVED', 'MORE
 
 // Outcomes staff may set, by offense type. SUBMITTED is never set by staff.
 const allowedOutcomes = (offenseType: Types.OffenseType): Types.Outcome[] => {
-  if(offenseType === 'DRIVING_SCHOOL') return ['APPROVED', 'NOT_APPROVED_HISTORY', 'NOT_APPROVED_CHARGE', 'MORE_INFO']
+  if(offenseType === 'DRIVING_SCHOOL') return ['APPROVED', 'NOT_APPROVED_HISTORY', 'NOT_APPROVED_CHARGE'] // no More info: the defendant sends no documents, the court checks the record itself
   if(offenseType === 'REGISTRATION') return [...CORRECTABLE_OUTCOMES, 'REDUCED'] // reduced to $77.00 applies to registration only (F6)
 
   return CORRECTABLE_OUTCOMES
