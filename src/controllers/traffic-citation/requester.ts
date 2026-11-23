@@ -32,12 +32,18 @@ export const deriveStatus = (offenses: Array<Pick<Types.OffenseInterface, 'outco
 
 type MatchFields = Pick<Types.RequesterInterface, 'uuid' | 'citationNumber' | 'licenseState' | 'licenseNumber'>
 
-// Duplicates are flagged for staff, never blocked (SPEC decision 8)
+// Duplicates are flagged for staff, never blocked (SPEC decision 8). Letter case and surrounding spaces do not matter, so
+// "C-1" and "c-1 " are the same citation (the demo does the same).
+const clean = (value: string | null | undefined) => (value ?? '').trim().toLowerCase()
+
+// A blank value never matches (two blank citation numbers are not a duplicate)
+const same = (a: string | null | undefined, b: string | null | undefined) => !!clean(a) && clean(a) === clean(b)
+
 const isDuplicateOf = (a: MatchFields, b: MatchFields) => {
   if(a.uuid === b.uuid) return false
 
-  const sameCitation = !!a.citationNumber && a.citationNumber === b.citationNumber
-  const sameLicense = !!a.licenseNumber && a.licenseNumber === b.licenseNumber && a.licenseState === b.licenseState
+  const sameCitation = same(a.citationNumber, b.citationNumber)
+  const sameLicense = same(a.licenseNumber, b.licenseNumber) && clean(a.licenseState) === clean(b.licenseState)
 
   return sameCitation || sameLicense
 }
