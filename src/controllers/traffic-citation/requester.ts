@@ -11,18 +11,12 @@ import * as Types from '@/models/traffic-citation/types'
 
 type RequesterRecord = Model<Types.RequesterInterface> & Types.RequesterInterface
 type OffenseRecord = Model<Types.OffenseInterface> & Types.OffenseInterface
-type NotificationRecord = Model<Types.NotificationInterface> & Types.NotificationInterface
 
-// A notification is still owed when the newest answer to "Ready to notify defendant?" was "save without notifying"
-export const notifyPending = (notifications: Array<Pick<Types.NotificationInterface, 'status' | 'id'>>): boolean => {
-  const latest = [...notifications].sort((a, b) => b.id - a.id)[0]
-
-  return latest?.status === 'PENDING'
-}
-
-// The defendant answered a More info request: an offense is back in review after having been sent for more info
+// The defendant answered a More info request: the offense is back in review and staff's newest decision on it (Approvals
+// come oldest first) is still More info. When staff reopen an offense themselves a Submitted decision is added, so it is
+// no longer a reply.
 const defendantReplied = (offenses: Array<{ outcome: Types.Outcome, Approvals?: Array<{ outcome: Types.Outcome }> }>): boolean =>
-  offenses.some(offense => offense.outcome === 'SUBMITTED' && (offense.Approvals ?? []).some(approval => approval.outcome === 'MORE_INFO'))
+  offenses.some(offense => offense.outcome === 'SUBMITTED' && (offense.Approvals ?? []).slice(-1)[0]?.outcome === 'MORE_INFO')
 
 export type RequestStatus = 'NEEDS_REVIEW' | 'MORE_INFO' | 'COMPLETED'
 
@@ -80,11 +74,10 @@ export const getRequests = asyncHandler(async (req: Request<{}, {}, {}, { search
     where,
     attributes: ['uuid', 'requestType', 'firstName', 'lastName', 'email', 'citationNumber', 'licenseState', 'licenseNumber', 'createdAt'],
     include: [
-      { model: Offense, attributes: ['offenseType', 'outcome'], include: [{ model: Approval, attributes: ['outcome'] }] },
-      { model: Notification, attributes: ['id', 'status'] }
+      { model: Offense, attributes: ['offenseType', 'outcome'], include: [{ model: Approval, attributes: ['outcome'] }] }
     ],
-    order: [['createdAt', 'desc']]
-  }) as Array<RequesterRecord & { Offenses: Array<OffenseRecord & { Approvals: Array<{ outcome: Types.Outcome }> }>, Notifications: NotificationRecord[] }>
+    order: [['createdAt', 'desc'], [Offense, Approval, 'createdAt', 'asc']]
+  }) as Array<RequesterRecord & { Offenses: Array<OffenseRecord & { Approvals: Array<{ outcome: Types.Outcome }> }> }>
 
   // Duplicates are checked against every request, not just the filtered ones
   const everyone = await Requester.findAll({ attributes: ['uuid', 'citationNumber', 'licenseState', 'licenseNumber'] }) as RequesterRecord[]
@@ -101,7 +94,6 @@ export const getRequests = asyncHandler(async (req: Request<{}, {}, {}, { search
       status: deriveStatus(request.Offenses),
       offenses: request.Offenses.map(({ offenseType, outcome }) => ({ offenseType, outcome })),
       duplicate: everyone.some(other => isDuplicateOf(request, other)),
-      notifyPending: notifyPending(request.Notifications),
       replied: defendantReplied(request.Offenses)
     }))
     .filter(request => !status || request.status === status)

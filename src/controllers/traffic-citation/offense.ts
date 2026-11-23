@@ -15,12 +15,13 @@ type OffenseRecord = Model<Types.OffenseInterface> & Types.OffenseInterface
 
 const CORRECTABLE_OUTCOMES: Types.Outcome[] = ['APPROVED', 'NOT_APPROVED', 'MORE_INFO']
 
-// Outcomes staff may set, by offense type. SUBMITTED is never set by staff.
+// Outcomes staff may set, by offense type. SUBMITTED (back to under review) is always allowed, even after the defendant
+// was told: staff may need to reopen a decision (for example after a phone call). It is a history row like any other.
 const allowedOutcomes = (offenseType: Types.OffenseType): Types.Outcome[] => {
-  if(offenseType === 'DRIVING_SCHOOL') return ['APPROVED', 'NOT_APPROVED_HISTORY', 'NOT_APPROVED_CHARGE'] // no More info: the defendant sends no documents, the court checks the record itself
-  if(offenseType === 'REGISTRATION') return [...CORRECTABLE_OUTCOMES, 'REDUCED'] // reduced to $77.00 applies to registration only (F6)
+  if(offenseType === 'DRIVING_SCHOOL') return ['SUBMITTED', 'APPROVED', 'NOT_APPROVED_HISTORY', 'NOT_APPROVED_CHARGE'] // no More info: the defendant sends no documents, the court checks the record itself
+  if(offenseType === 'REGISTRATION') return ['SUBMITTED', ...CORRECTABLE_OUTCOMES, 'REDUCED'] // reduced to $77.00 applies to registration only (F6)
 
-  return CORRECTABLE_OUTCOMES
+  return ['SUBMITTED', ...CORRECTABLE_OUTCOMES]
 }
 
 const OWES_MONEY: Types.Outcome[] = ['NOT_APPROVED', 'REDUCED']
