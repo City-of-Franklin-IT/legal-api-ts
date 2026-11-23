@@ -1,6 +1,7 @@
 import { Router } from "express"
 import { getRequests, getRequest, setDueDate } from '@/controllers/traffic-citation/requester'
 import { createCorrespondence } from '@/controllers/traffic-citation/correspondence'
+import { createNotification } from '@/controllers/traffic-citation/notification'
 import { entra } from "@/middleware/auth"
 import { requireRole } from "@/utils/requireRole"
 import rateLimiter from "@/middleware/rateLimiter"
@@ -28,5 +29,9 @@ router
 router
   .route('/:uuid/correspondence')
   .post(createCorrespondence)
+
+router
+  .route('/:uuid/notification')
+  .post(createNotification)
 
 export default router

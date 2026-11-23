@@ -11,6 +11,15 @@ export type OffenseType = typeof OFFENSE_TYPES[number]
 export const OUTCOMES = ['SUBMITTED', 'APPROVED', 'NOT_APPROVED', 'REDUCED', 'MORE_INFO', 'NOT_APPROVED_HISTORY', 'NOT_APPROVED_CHARGE'] as const
 export type Outcome = typeof OUTCOMES[number]
 
+// What the defendant is told about. A row is written each time staff answer "Ready to notify defendant?":
+// NOTIFIED when they say yes (the email phase sends it), PENDING when they save without notifying.
+// The latest row for a request decides whether a notification is still owed.
+export const NOTIFICATION_KINDS = ['MORE_INFO', 'COMPLETED', 'DRIVING_SCHOOL'] as const
+export type NotificationKind = typeof NOTIFICATION_KINDS[number]
+
+export const NOTIFICATION_STATUSES = ['PENDING', 'NOTIFIED'] as const
+export type NotificationStatus = typeof NOTIFICATION_STATUSES[number]
+
 export interface RequesterInterface {
   id: number
   requestType: RequestType
@@ -39,6 +48,13 @@ export interface OffenseInterface {
   createdAt: Date
   updatedAt: Date
   updatedBy: string | null
+}
+
+export interface NotificationInterface extends Omit<BaseInterface, 'updatedBy' | 'updatedAt'> {
+  id: number
+  parentId: string
+  kind: NotificationKind
+  status: NotificationStatus
 }
 
 export interface CorrespondenceInterface extends Omit<BaseInterface, 'updatedBy' | 'updatedAt'> {
@@ -77,6 +93,7 @@ export interface DatabaseInterface {
   Offense: ModelStatic<Model<OffenseInterface>>
   Correspondence: ModelStatic<Model<CorrespondenceInterface>>
   Approval: ModelStatic<Model<ApprovalInterface>>
+  Notification: ModelStatic<Model<NotificationInterface>>
   Attachment: ModelStatic<Model<AttachmentInterface>>
   [key: string]: ModelStatic<Model<any, any>> | Sequelize
 }

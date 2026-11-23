@@ -22,10 +22,11 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     declare createdAt: Date
     declare updatedAt: Date
 
-    static associate({ Offense, Correspondence, Attachment }: { Offense: ModelStatic<Model<Types.OffenseInterface>>, Correspondence: ModelStatic<Model<Types.CorrespondenceInterface>>, Attachment: ModelStatic<Model<Types.AttachmentInterface>> }) {
+    static associate({ Offense, Correspondence, Attachment, Notification }: { Offense: ModelStatic<Model<Types.OffenseInterface>>, Correspondence: ModelStatic<Model<Types.CorrespondenceInterface>>, Attachment: ModelStatic<Model<Types.AttachmentInterface>>, Notification: ModelStatic<Model<Types.NotificationInterface>> }) {
       this.hasMany(Offense, { sourceKey: 'uuid', foreignKey: 'parentId' })
       this.hasMany(Correspondence, { sourceKey: 'uuid', foreignKey: 'parentId' })
       this.hasMany(Attachment, { sourceKey: 'uuid', foreignKey: 'parentId' })
+      this.hasMany(Notification, { sourceKey: 'uuid', foreignKey: 'parentId' })
     }
   }
 

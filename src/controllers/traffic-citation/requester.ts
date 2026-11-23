@@ -1,7 +1,7 @@
 import { Op } from 'sequelize'
 import asyncHandler from '@/middleware/async'
 import { ErrorResponse } from '@/utils/errorResponse'
-import { Requester, Offense, Approval, Correspondence, Attachment } from '@/models/traffic-citation'
+import { Requester, Offense, Approval, Correspondence, Attachment, Notification } from '@/models/traffic-citation'
 
 // Types
 import { Request, Response, NextFunction } from 'express'
@@ -11,6 +11,18 @@ import * as Types from '@/models/traffic-citation/types'
 
 type RequesterRecord = Model<Types.RequesterInterface> & Types.RequesterInterface
 type OffenseRecord = Model<Types.OffenseInterface> & Types.OffenseInterface
+type NotificationRecord = Model<Types.NotificationInterface> & Types.NotificationInterface
+
+// A notification is still owed when the newest answer to "Ready to notify defendant?" was "save without notifying"
+export const notifyPending = (notifications: Array<Pick<Types.NotificationInterface, 'status' | 'id'>>): boolean => {
+  const latest = [...notifications].sort((a, b) => b.id - a.id)[0]
+
+  return latest?.status === 'PENDING'
+}
+
+// The defendant answered a More info request: an offense is back in review after having been sent for more info
+const defendantReplied = (offenses: Array<{ outcome: Types.Outcome, Approvals?: Array<{ outcome: Types.Outcome }> }>): boolean =>
+  offenses.some(offense => offense.outcome === 'SUBMITTED' && (offense.Approvals ?? []).some(approval => approval.outcome === 'MORE_INFO'))
 
 export type RequestStatus = 'NEEDS_REVIEW' | 'MORE_INFO' | 'COMPLETED'
 
@@ -67,9 +79,12 @@ export const getRequests = asyncHandler(async (req: Request<{}, {}, {}, { search
   const requests = await Requester.findAll({
     where,
     attributes: ['uuid', 'requestType', 'firstName', 'lastName', 'email', 'citationNumber', 'licenseState', 'licenseNumber', 'createdAt'],
-    include: [{ model: Offense, attributes: ['offenseType', 'outcome'] }],
+    include: [
+      { model: Offense, attributes: ['offenseType', 'outcome'], include: [{ model: Approval, attributes: ['outcome'] }] },
+      { model: Notification, attributes: ['id', 'status'] }
+    ],
     order: [['createdAt', 'desc']]
-  }) as Array<RequesterRecord & { Offenses: OffenseRecord[] }>
+  }) as Array<RequesterRecord & { Offenses: Array<OffenseRecord & { Approvals: Array<{ outcome: Types.Outcome }> }>, Notifications: NotificationRecord[] }>
 
   // Duplicates are checked against every request, not just the filtered ones
   const everyone = await Requester.findAll({ attributes: ['uuid', 'citationNumber', 'licenseState', 'licenseNumber'] }) as RequesterRecord[]
@@ -85,7 +100,9 @@ export const getRequests = asyncHandler(async (req: Request<{}, {}, {}, { search
       createdAt: request.createdAt,
       status: deriveStatus(request.Offenses),
       offenses: request.Offenses.map(({ offenseType, outcome }) => ({ offenseType, outcome })),
-      duplicate: everyone.some(other => isDuplicateOf(request, other))
+      duplicate: everyone.some(other => isDuplicateOf(request, other)),
+      notifyPending: notifyPending(request.Notifications),
+      replied: defendantReplied(request.Offenses)
     }))
     .filter(request => !status || request.status === status)
 
@@ -98,11 +115,12 @@ export const getRequests = asyncHandler(async (req: Request<{}, {}, {}, { search
 export const getRequest = asyncHandler(async (req: Request<{ uuid: string }>, res: Response, next: NextFunction) => {
   const request = await Requester.findOne({
     where: { uuid: req.params.uuid },
-    order: [[Offense, 'id', 'asc'], [Offense, Approval, 'createdAt', 'asc'], [Correspondence, 'createdAt', 'asc'], [Attachment, 'createdAt', 'asc']],
+    order: [[Offense, 'id', 'asc'], [Offense, Approval, 'createdAt', 'asc'], [Correspondence, 'createdAt', 'asc'], [Attachment, 'createdAt', 'asc'], [Notification, 'id', 'asc']],
     include: [
       { model: Offense, include: [{ model: Approval }] },
       { model: Correspondence },
-      { model: Attachment, attributes: { exclude: ['attachment'] } }
+      { model: Attachment, attributes: { exclude: ['attachment'] } },
+      { model: Notification }
     ]
   }) as (RequesterRecord & { Offenses: OffenseRecord[] }) | null
 
