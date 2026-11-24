@@ -6,7 +6,6 @@
   "scripts": {
     "build": "tsc && tsc-alias",
     "dev": "NODE_ENV=development nodemon -r tsconfig-paths/register src/app.ts",
-    "deploy": "scp deploy/docker-compose.yml .env $USER@cofasv30:/opt/containers/legal-api-ts",
     "start": "NODE_ENV=production npx tsx dist/app.js"
   },
   "author": "Andrew Southern",
