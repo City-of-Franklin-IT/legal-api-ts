@@ -1,6 +1,5 @@
 import asyncHandler from '@/middleware/async'
 import { ErrorResponse } from '@/utils/errorResponse'
-import isUuid from '@/utils/isUuid'
 import editorTracking from '@/utils/editorTracking'
 import { Requester, Offense, Correspondence } from '@/models/traffic-citation'
 
@@ -16,7 +15,7 @@ type CorrespondenceRecord = Model<Types.CorrespondenceInterface> & Types.Corresp
 //@route   POST /api/v2/legal/traffic-citation/request/:uuid/correspondence
 //@access  citation.admin
 export const createCorrespondence = asyncHandler(async (req: Request<{ uuid: string }, {}, { message?: string, offenseUuid?: string }>, res: Response<ControllerResponse & { data: Types.CorrespondenceInterface }>, next: NextFunction) => {
-  const { message, offenseUuid } = req.body ?? {}
+  const { message, offenseUuid } = req.body
 
   if(typeof message !== 'string' || !message.trim()) {
     return next(new ErrorResponse('A message is required', 400))
@@ -27,7 +26,7 @@ export const createCorrespondence = asyncHandler(async (req: Request<{ uuid: str
   }
 
   if(offenseUuid !== undefined && offenseUuid !== null) {
-    if(!isUuid(offenseUuid) || !await Offense.findOne({ where: { uuid: offenseUuid, parentId: req.params.uuid } })) {
+    if(!await Offense.findOne({ where: { uuid: offenseUuid, parentId: req.params.uuid } })) {
       return next(new ErrorResponse('That offense does not belong to this request', 400))
     }
   }
