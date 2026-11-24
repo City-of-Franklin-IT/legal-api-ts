@@ -57,13 +57,6 @@ export interface NotificationInterface extends Omit<BaseInterface, 'updatedBy' |
   status: NotificationStatus
 }
 
-export interface CorrespondenceInterface extends Omit<BaseInterface, 'updatedBy' | 'updatedAt'> {
-  id: number
-  parentId: string
-  offenseUuid: string | null
-  message: string
-}
-
 // Append-only history of staff decisions; parentId is the offense uuid
 export interface ApprovalInterface extends Omit<BaseInterface, 'updatedBy' | 'updatedAt'> {
   id: number
@@ -91,7 +84,6 @@ export interface DatabaseInterface {
   sequelize: Sequelize
   Requester: ModelStatic<Model<RequesterInterface>>
   Offense: ModelStatic<Model<OffenseInterface>>
-  Correspondence: ModelStatic<Model<CorrespondenceInterface>>
   Approval: ModelStatic<Model<ApprovalInterface>>
   Notification: ModelStatic<Model<NotificationInterface>>
   Attachment: ModelStatic<Model<AttachmentInterface>>

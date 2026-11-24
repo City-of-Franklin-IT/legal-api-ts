@@ -20,15 +20,7 @@ type NotificationRecord = Model<Types.NotificationInterface> & Types.Notificatio
 //@route   POST /api/v2/legal/traffic-citation/request/:uuid/notification
 //@access  citation.admin
 export const createNotification = asyncHandler(async (req: Request<{ uuid: string }, {}, { kind?: Types.NotificationKind, status?: Types.NotificationStatus }>, res: Response<ControllerResponse & { data: Types.NotificationInterface }>, next: NextFunction) => {
-  const { kind, status } = req.body ?? {}
-
-  if(!kind || !(Types.NOTIFICATION_KINDS as readonly string[]).includes(kind)) {
-    return next(new ErrorResponse('Invalid kind', 400))
-  }
-
-  if(!status || !(Types.NOTIFICATION_STATUSES as readonly string[]).includes(status)) {
-    return next(new ErrorResponse('Invalid status', 400))
-  }
+  const { kind, status } = req.body
 
   const request = await Requester.findOne({ where: { uuid: req.params.uuid } }) as RequesterRecord | null
 

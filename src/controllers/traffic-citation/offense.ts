@@ -15,18 +15,14 @@ type OffenseRecord = Model<Types.OffenseInterface> & Types.OffenseInterface
 
 const CORRECTABLE_OUTCOMES: Types.Outcome[] = ['APPROVED', 'NOT_APPROVED', 'MORE_INFO']
 
-// Outcomes staff may set, by offense type. SUBMITTED (back to under review) is always allowed, even after the defendant
-// was told: staff may need to reopen a decision (for example after a phone call). It is a history row like any other.
 const allowedOutcomes = (offenseType: Types.OffenseType): Types.Outcome[] => {
-  if(offenseType === 'DRIVING_SCHOOL') return ['SUBMITTED', 'APPROVED', 'NOT_APPROVED_HISTORY', 'NOT_APPROVED_CHARGE'] // no More info: the defendant sends no documents, the court checks the record itself
-  if(offenseType === 'REGISTRATION') return ['SUBMITTED', ...CORRECTABLE_OUTCOMES, 'REDUCED'] // reduced to $77.00 applies to registration only (F6)
+  if(offenseType === 'DRIVING_SCHOOL') return ['SUBMITTED', 'APPROVED', 'NOT_APPROVED_HISTORY', 'NOT_APPROVED_CHARGE']
+  if(offenseType === 'REGISTRATION') return ['SUBMITTED', ...CORRECTABLE_OUTCOMES, 'REDUCED']
 
   return ['SUBMITTED', ...CORRECTABLE_OUTCOMES]
 }
 
 const OWES_MONEY: Types.Outcome[] = ['NOT_APPROVED', 'REDUCED']
-
-const MAX_COMMENT_LENGTH = 5000
 
 type DecisionBody = { outcome?: Types.Outcome, amount?: number | string | null, comment?: string | null }
 
@@ -36,7 +32,7 @@ type DecisionBody = { outcome?: Types.Outcome, amount?: number | string | null, 
 //@route   POST /api/v2/legal/traffic-citation/offense/:uuid/decision
 //@access  citation.admin
 export const createDecision = asyncHandler(async (req: Request<{ uuid: string }, {}, DecisionBody>, res: Response<ControllerResponse & { data: Types.OffenseInterface }>, next: NextFunction) => {
-  const { outcome, amount, comment } = req.body ?? {}
+  const { outcome, amount, comment } = req.body
   const file = req.file
 
   const offense = await Offense.findOne({ where: { uuid: req.params.uuid } }) as OffenseRecord | null
@@ -56,20 +52,14 @@ export const createDecision = asyncHandler(async (req: Request<{ uuid: string },
   let cleanAmount: number | null = null
 
   if(OWES_MONEY.includes(outcome)) {
-    const parsed = typeof amount === 'string' ? Number(amount) : amount
-
-    if(typeof parsed !== 'number' || !Number.isFinite(parsed) || parsed < 0 || parsed > 99999999.99 || Math.round(parsed * 100) !== parsed * 100) {
-      return next(new ErrorResponse('A valid amount (0 or more, at most two decimals) is required for this outcome', 400))
+    if(amount === undefined || amount === null || amount === '') {
+      return next(new ErrorResponse('An amount is required for this outcome', 400))
     }
 
-    cleanAmount = Number(parsed.toFixed(2))
+    cleanAmount = Number(amount)
   }
 
-  const cleanComment = typeof comment === 'string' && comment.trim() ? comment.trim() : null
-
-  if(cleanComment && cleanComment.length > MAX_COMMENT_LENGTH) {
-    return next(new ErrorResponse(`Comment must be ${ MAX_COMMENT_LENGTH } characters or fewer`, 400))
-  }
+  const cleanComment = comment?.trim() || null
 
   if(outcome === 'MORE_INFO' && !cleanComment) {
     return next(new ErrorResponse('A note to the defendant is required for More info needed', 400))
@@ -86,7 +76,6 @@ export const createDecision = asyncHandler(async (req: Request<{ uuid: string },
       createdBy: updatedBy
     } as Types.ApprovalInterface, { transaction })
 
-    // The defendant only sees the staff note on More info; the history row keeps every note
     await offense.update({
       outcome,
       amount: cleanAmount,
@@ -95,7 +84,6 @@ export const createDecision = asyncHandler(async (req: Request<{ uuid: string },
     }, { transaction })
 
     if(file) {
-      // The type comes from the file's own bytes (checked by the upload middleware), never from the browser
       const fileType = detectFileType(file.buffer)!
 
       await Attachment.create({

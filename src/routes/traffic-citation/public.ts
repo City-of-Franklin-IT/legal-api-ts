@@ -1,15 +1,13 @@
 import { Router } from "express"
-import { createRequest, verifyRequest, getMe, getCorrespondences, createCorrespondence, getAttachments, downloadAttachment, createAttachment } from '@/controllers/traffic-citation/public'
+import { createRequest, verifyRequest, getMe, getAttachments, downloadAttachment, createAttachment } from '@/controllers/traffic-citation/public'
 import { requesterToken } from "@/middleware/auth/requesterToken"
 import rateLimiter from "@/middleware/rateLimiter"
 import submissionLimiter from "@/middleware/rateLimiter/submission"
 import { verifyIpLimiter, verifyRequestLimiter } from "@/middleware/rateLimiter/verify"
 import upload from "@/middleware/upload"
-import uuidParam from './uuidParam'
 
 const router = Router()
 
-router.param('uuid', uuidParam)
 
 // Tier A, no token: create a request, or confirm email and phone to get a token
 router
@@ -27,11 +25,6 @@ router.use(rateLimiter)
 router
   .route('/me')
   .get(getMe)
-
-router
-  .route('/correspondence')
-  .get(getCorrespondences)
-  .post(createCorrespondence)
 
 router
   .route('/offense/:uuid/attachment')

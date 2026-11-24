@@ -122,7 +122,6 @@ Base URL: `/api/v2/legal/traffic-citation`
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/public/me` | The defendant's own request: offenses with outcomes, amounts and the More info note, their files and messages |
-| GET, POST | `/public/correspondence` | Read or send messages |
 | POST | `/public/offense/:uuid/attachment` | Upload the proof file (one per offense; a second only after the court asks for more info) |
 | GET | `/public/attachment` | List the defendant's proof files |
 | GET | `/public/attachment/:uuid/download` | Download one |
@@ -134,7 +133,6 @@ Base URL: `/api/v2/legal/traffic-citation`
 | GET | `/request` | Queue, with derived status and duplicate flags (`searchValue`, `requestType`, `status`) |
 | GET | `/request/:uuid` | One request with offenses and decision history, messages, file list, notifications and possible duplicates |
 | PUT | `/request/:uuid/due-date` | Set the payable-by date |
-| POST | `/request/:uuid/correspondence` | Send a message to the defendant |
 | POST | `/request/:uuid/notification` | Record the answer to "Ready to notify defendant?" |
 | POST | `/offense/:uuid/decision` | Record a decision (multipart when the court's driving school letter is attached) |
 | GET | `/attachment/:uuid/download` | Download a proof file or letter |

@@ -6,7 +6,6 @@ import * as Types from './types'
 // Models
 import RequesterModel from './Requester'
 import OffenseModel from './Offense'
-import CorrespondenceModel from './Correspondence'
 import ApprovalModel from './Approval'
 import NotificationModel from './Notification'
 import AttachmentModel from './Attachment'
@@ -21,7 +20,6 @@ const db = {
   sequelize: {} as Sequelize,
   Requester: {} as ModelStatic<Model<Types.RequesterInterface>>,
   Offense: {} as ModelStatic<Model<Types.OffenseInterface>>,
-  Correspondence: {} as ModelStatic<Model<Types.CorrespondenceInterface>>,
   Approval: {} as ModelStatic<Model<Types.ApprovalInterface>>,
   Notification: {} as ModelStatic<Model<Types.NotificationInterface>>,
   Attachment: {} as ModelStatic<Model<Types.AttachmentInterface>>
@@ -43,7 +41,6 @@ db.sequelize = new Sequelize(dbPath.database, dbPath.username, dbPath.password, 
 
 db.Requester = RequesterModel(db.sequelize, DataTypes)
 db.Offense = OffenseModel(db.sequelize, DataTypes)
-db.Correspondence = CorrespondenceModel(db.sequelize, DataTypes)
 db.Approval = ApprovalModel(db.sequelize, DataTypes)
 db.Notification = NotificationModel(db.sequelize, DataTypes)
 db.Attachment = AttachmentModel(db.sequelize, DataTypes)
@@ -57,7 +54,6 @@ Object.keys(db).forEach(modelName => {
 export const sequelize = db.sequelize
 export const Requester = db.Requester
 export const Offense = db.Offense
-export const Correspondence = db.Correspondence
 export const Approval = db.Approval
 export const Notification = db.Notification
 export const Attachment = db.Attachment

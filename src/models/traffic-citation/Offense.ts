@@ -18,11 +18,10 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     declare updatedAt: Date
     declare updatedBy: string | null
 
-    static associate({ Requester, Approval, Attachment, Correspondence }: { Requester: ModelStatic<Model<Types.RequesterInterface>>, Approval: ModelStatic<Model<Types.ApprovalInterface>>, Attachment: ModelStatic<Model<Types.AttachmentInterface>>, Correspondence: ModelStatic<Model<Types.CorrespondenceInterface>> }) {
+    static associate({ Requester, Approval, Attachment }: { Requester: ModelStatic<Model<Types.RequesterInterface>>, Approval: ModelStatic<Model<Types.ApprovalInterface>>, Attachment: ModelStatic<Model<Types.AttachmentInterface>> }) {
       this.belongsTo(Requester, { targetKey: 'uuid', foreignKey: 'parentId' })
       this.hasMany(Approval, { sourceKey: 'uuid', foreignKey: 'parentId' })
       this.hasMany(Attachment, { sourceKey: 'uuid', foreignKey: 'offenseUuid' })
-      this.hasMany(Correspondence, { sourceKey: 'uuid', foreignKey: 'offenseUuid' })
     }
   }
 

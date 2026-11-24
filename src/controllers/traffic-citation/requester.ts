@@ -1,7 +1,7 @@
 import { Op } from 'sequelize'
 import asyncHandler from '@/middleware/async'
 import { ErrorResponse } from '@/utils/errorResponse'
-import { Requester, Offense, Approval, Correspondence, Attachment, Notification } from '@/models/traffic-citation'
+import { Requester, Offense, Approval, Attachment, Notification } from '@/models/traffic-citation'
 
 // Types
 import { Request, Response, NextFunction } from 'express'
@@ -12,17 +12,11 @@ import * as Types from '@/models/traffic-citation/types'
 type RequesterRecord = Model<Types.RequesterInterface> & Types.RequesterInterface
 type OffenseRecord = Model<Types.OffenseInterface> & Types.OffenseInterface
 
-// The defendant answered a More info request: the offense is back in review and staff's newest decision on it (Approvals
-// come oldest first) is still More info. When staff reopen an offense themselves a Submitted decision is added, so it is
-// no longer a reply.
-const defendantReplied = (offenses: Array<{ outcome: Types.Outcome, Approvals?: Array<{ outcome: Types.Outcome }> }>): boolean =>
-  offenses.some(offense => offense.outcome === 'SUBMITTED' && (offense.Approvals ?? []).slice(-1)[0]?.outcome === 'MORE_INFO')
+const defendantReplied = (offenses: Array<{ outcome: Types.Outcome, Approvals: Array<{ outcome: Types.Outcome }> }>): boolean =>
+  offenses.some(offense => offense.outcome === 'SUBMITTED' && offense.Approvals.slice(-1)[0]?.outcome === 'MORE_INFO')
 
 export type RequestStatus = 'NEEDS_REVIEW' | 'MORE_INFO' | 'COMPLETED'
 
-const STATUSES: RequestStatus[] = ['NEEDS_REVIEW', 'MORE_INFO', 'COMPLETED']
-
-// Status is derived from the offense outcomes and is not stored (docs/SCHEMA.md)
 export const deriveStatus = (offenses: Array<Pick<Types.OffenseInterface, 'outcome'>>): RequestStatus => {
   if(offenses.some(offense => offense.outcome === 'SUBMITTED')) return 'NEEDS_REVIEW'
   if(offenses.some(offense => offense.outcome === 'MORE_INFO')) return 'MORE_INFO'
@@ -32,11 +26,8 @@ export const deriveStatus = (offenses: Array<Pick<Types.OffenseInterface, 'outco
 
 type MatchFields = Pick<Types.RequesterInterface, 'uuid' | 'citationNumber' | 'licenseState' | 'licenseNumber'>
 
-// Duplicates are flagged for staff, never blocked (SPEC decision 8). Letter case and surrounding spaces do not matter, so
-// "C-1" and "c-1 " are the same citation (the demo does the same).
 const clean = (value: string | null | undefined) => (value ?? '').trim().toLowerCase()
 
-// A blank value never matches (two blank citation numbers are not a duplicate)
 const same = (a: string | null | undefined, b: string | null | undefined) => !!clean(a) && clean(a) === clean(b)
 
 const isDuplicateOf = (a: MatchFields, b: MatchFields) => {
@@ -51,16 +42,8 @@ const isDuplicateOf = (a: MatchFields, b: MatchFields) => {
 //@desc    Staff queue: requests with their derived status and duplicate flag (no license, DOB or phone)
 //@route   GET /api/v2/legal/traffic-citation/request?searchValue=&requestType=&status=
 //@access  citation.admin
-export const getRequests = asyncHandler(async (req: Request<{}, {}, {}, { searchValue?: string, requestType?: string, status?: string }>, res: Response, next: NextFunction) => {
+export const getRequests = asyncHandler(async (req: Request<{}, {}, {}, { searchValue?: string, requestType?: string, status?: string }>, res: Response) => {
   const { searchValue, requestType, status } = req.query
-
-  if(requestType && !(Types.REQUEST_TYPES as readonly string[]).includes(requestType)) {
-    return next(new ErrorResponse('Invalid requestType', 400))
-  }
-
-  if(status && !STATUSES.includes(status as RequestStatus)) {
-    return next(new ErrorResponse('Invalid status', 400))
-  }
 
   const search = `%${ searchValue ?? '' }%`
 
@@ -107,16 +90,15 @@ export const getRequests = asyncHandler(async (req: Request<{}, {}, {}, { search
   res.status(200).json({ success: true, data })
 })
 
-//@desc    Staff review: full request, offenses with decision history, correspondence, attachment metadata, possible duplicates
+//@desc    Staff review: full request, offenses with decision history, attachment metadata, possible duplicates
 //@route   GET /api/v2/legal/traffic-citation/request/:uuid
 //@access  citation.admin
 export const getRequest = asyncHandler(async (req: Request<{ uuid: string }>, res: Response, next: NextFunction) => {
   const request = await Requester.findOne({
     where: { uuid: req.params.uuid },
-    order: [[Offense, 'id', 'asc'], [Offense, Approval, 'createdAt', 'asc'], [Correspondence, 'createdAt', 'asc'], [Attachment, 'createdAt', 'asc'], [Notification, 'id', 'asc']],
+    order: [[Offense, 'id', 'asc'], [Offense, Approval, 'createdAt', 'asc'], [Attachment, 'createdAt', 'asc'], [Notification, 'id', 'asc']],
     include: [
       { model: Offense, include: [{ model: Approval }] },
-      { model: Correspondence },
       { model: Attachment, attributes: { exclude: ['attachment'] } },
       { model: Notification }
     ]
@@ -140,23 +122,11 @@ export const getRequest = asyncHandler(async (req: Request<{ uuid: string }>, re
   res.status(200).json({ success: true, data: { request, duplicates } })
 })
 
-const isRealDate = (value: string) => {
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
-
-  const date = new Date(`${ value }T00:00:00Z`)
-
-  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
-}
-
 //@desc    Set (or clear with null) the one payable-by date for the whole request
 //@route   PUT /api/v2/legal/traffic-citation/request/:uuid/due-date
 //@access  citation.admin
 export const setDueDate = asyncHandler(async (req: Request<{ uuid: string }, {}, { dueDate?: string | null }>, res: Response<ControllerResponse & { data: { dueDate: string | null } }>, next: NextFunction) => {
-  const dueDate = req.body?.dueDate
-
-  if(dueDate !== null && (typeof dueDate !== 'string' || !isRealDate(dueDate))) {
-    return next(new ErrorResponse('dueDate must be a YYYY-MM-DD date or null', 400))
-  }
+  const dueDate = req.body.dueDate
 
   const request = await Requester.findOne({ where: { uuid: req.params.uuid } }) as RequesterRecord | null
 
