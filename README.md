@@ -1,6 +1,6 @@
 # Legal API
 
-REST API for managing legal documents and case matters.
+REST API for managing legal documents and case matters (`city-law`), and for the Traffic Citation Portal (`traffic-citation`).
 
 ![Express](https://img.shields.io/badge/Express-5.1-000000?logo=express)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)
@@ -18,6 +18,7 @@ This API provides CRUD operations for legal case management, including matters, 
 - Related matter cross-references
 - Azure Entra ID authentication
 - Rate limiting and security headers
+- Traffic Citation Portal: public requests with proof uploads, and a staff review queue (see [Traffic Citation module](#traffic-citation-module))
 
 ## Prerequisites
 
@@ -47,6 +48,11 @@ cp src/config/config.env.example src/config/config.env
 | `CITY_LAW_DB_HOST` | SQL Server hostname |
 | `CITY_LAW_DB_DATABASE` | Database name |
 | `BASE_URL` | API base path (e.g., `/api/v2/legal`) |
+| `TRAFFIC_CITATION_DB_HOST` | SQL Server hostname for the traffic citation database |
+| `TRAFFIC_CITATION_DB_DATABASE` | Database name (`court_traffic_citation`) |
+| `TRAFFIC_CITATION_TOKEN_SECRET` | Secret that signs the defendant's short-lived token (random value, different in each environment) |
+| `TRAFFIC_CITATION_TOKEN_TTL` | Defendant token lifetime (default `20m`) |
+| `TRAFFIC_CITATION_MAX_UPLOAD_BYTES` | Largest proof file accepted (default 10 MB) |
 | `ENTRA_URL` | Azure Entra ID validation endpoint |
 
 Example `.env`:
@@ -97,6 +103,52 @@ Base URL: `/api/v2/legal/city-law`
 | GET | `/document/zip/:matterId` | Download all documents for a matter as zip |
 
 All routes require Azure Entra ID authentication (bypassed in development mode).
+
+## Traffic Citation module
+
+Serves the Traffic Citation Portal (frontend repo: `citation-portal-vite-ts`). Own database, `court_traffic_citation`.
+
+Base URL: `/api/v2/legal/traffic-citation`
+
+**Public, no token** (rate limited)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/public/request` | Create a request with its offenses |
+| POST | `/public/request/:uuid/verify` | Confirm email and phone, returns a 20-minute token for that request |
+
+**Public, requester token** (`Authorization: Bearer <token>`)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/public/me` | The defendant's own request: offenses with outcomes, amounts and the More info note, their files and messages |
+| GET, POST | `/public/correspondence` | Read or send messages |
+| POST | `/public/offense/:uuid/attachment` | Upload the proof file (one per offense; a second only after the court asks for more info) |
+| GET | `/public/attachment` | List the defendant's proof files |
+| GET | `/public/attachment/:uuid/download` | Download one |
+
+**Staff** (Entra token with the `citation.admin` role)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/request` | Queue, with derived status and duplicate flags (`searchValue`, `requestType`, `status`) |
+| GET | `/request/:uuid` | One request with offenses and decision history, messages, file list, notifications and possible duplicates |
+| PUT | `/request/:uuid/due-date` | Set the payable-by date |
+| POST | `/request/:uuid/correspondence` | Send a message to the defendant |
+| POST | `/request/:uuid/notification` | Record the answer to "Ready to notify defendant?" |
+| POST | `/offense/:uuid/decision` | Record a decision (multipart when the court's driving school letter is attached) |
+| GET | `/attachment/:uuid/download` | Download a proof file or letter |
+
+Uploads accept PDF, JPG, PNG and HEIC/HEIF, checked by file contents. Status is derived from offense outcomes, not stored.
+
+**Database scripts** live in the frontend repo, not here:
+
+| File (in `citation-portal-vite-ts`) | Use |
+|---|---|
+| `docs/SCHEMA.md` | Schema design |
+| `docs/sql/create-traffic-citation-db.sql` | Creates the whole database (fresh install) |
+| `docs/sql/add-notification-table.sql` | Adds the `notification` table to a database made before it existed |
+| `docs/sql/alter-datetime-to-datetime2.sql` | Converts older audit columns to `DATETIME2` |
 
 ## Development
 

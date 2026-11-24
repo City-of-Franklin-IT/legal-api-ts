@@ -53,7 +53,7 @@ Offenses hold the current outcome; `approval` is an append-only decision history
 
 ### Models
 
-Located in `src/models/city-law/`. Matter is the central model with hasMany relationships to Documents, Notes, RelatedMatters, and hasOne to StatusNote.
+Located in `src/models/<domain>/` (`city-law`, `traffic-citation`). In `city-law`, Matter is the central model with hasMany relationships to Documents, Notes, RelatedMatters, and hasOne to StatusNote.
 
 - Model interfaces defined in `types.ts` files
 - Models use factory pattern, receiving sequelize instance
